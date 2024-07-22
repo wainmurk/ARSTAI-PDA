@@ -1,0 +1,245 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>ARSTAI Консоль</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: 'Roboto', Arial, Helvetica, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      width: 100%;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .card {
+      background-color: #1e1e1e;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      margin: 10px 0;
+      width: 100%;
+      max-width: 1300px;
+      box-sizing: border-box;
+    }
+    .button {
+      background-color: #6200ee;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      margin: 4px 2px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-weight: bold; /* Жирный шрифт для кнопок */
+    }
+    .button:hover {
+      background-color: #3700b3;
+    }
+    input[type="text"], input[type="password"], input[type="file"] {
+      padding: 12px 16px;
+      margin: 8px 0;
+      display: inline-block;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    .console {
+      background-color: #2e2e2e;
+      border-radius: 5px;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 1300px;
+      height: calc(100vh - 320px);
+      overflow-y: auto;
+      white-space: pre-wrap;
+      margin-bottom: 20px;
+    }
+    .file-actions {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .file-actions .card {
+      flex: 1;
+      margin: 5px;
+      padding: 10px;
+      font-size: 12px;
+    }
+    .file-actions .button {
+      font-size: 12px;
+    }
+    .input-group {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .input-group input[type="text"] {
+      flex: 1;
+      margin-right: 10px;
+    }
+    /* Медиа запросы для адаптивности */
+    @media screen and (max-width: 768px) {
+      h2 {
+        font-size: 24px; /* Уменьшаем размер заголовка на мобильных устройствах */
+      }
+      .console {
+        max-width: 100%; /* Растягиваем консоль на всю ширину на мобильных устройствах */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h2>ARSTAI Консоль</h2>
+      <div class="console" id="console"></div>
+      <div class="input-group">
+        <input type="text" id="command" placeholder="Введіть команду" autocapitalize="none">
+        <button class="button" onclick="sendCommand()">Відправити</button>
+      </div>
+    </div>
+    <div class="file-actions">
+      <div class="card">
+        <h2>Додати файл</h2>
+        <div class="input-group">
+          <input type="file" id="fileInput">
+          <button class="button" onclick="uploadFile()">Додати</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Завантажити файл</h2>
+        <div class="input-group">
+          <input type="text" id="filename" placeholder="Введіть назву файла" autocapitalize="none">
+          <button class="button" onclick="downloadFile()">Завантажити</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Оновити прошивку</h2>
+        <div class="input-group">
+          <input type="file" id="firmwareInput">
+          <button class="button" onclick="uploadFirmware()">Оновити</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function sendCommand() {
+      const commandInput = document.getElementById("command");
+      const command = commandInput.value.trim();
+      if (command !== "") {
+        fetch("/console", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: "command=" + encodeURIComponent(command)
+        })
+        .then(response => response.text())
+        .then(data => {
+          console.log(data);
+          updateConsole(); // Обновление консоли после отправки команды
+        });
+        commandInput.value = ''; // Очистка поля ввода после отправки команды
+      }
+    }
+
+    document.getElementById("command").addEventListener("keyup", function(event) {
+      if (event.key === "Enter") {
+        sendCommand();
+      }
+    });
+
+    // Функция для закидывания файла
+    function uploadFile() {
+      const fileInput = document.getElementById("fileInput");
+      if (fileInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        fetch("/upload", {
+          method: "POST",
+          body: formData
+        })
+        .then(response => response.text())
+        .then(data => {
+          console.log(data);
+          document.getElementById("uploadResponse").innerText = data;
+        });
+      }
+    }
+
+    function downloadFile() {
+      const filenameInput = document.getElementById("filename");
+      const filename = filenameInput.value.trim();
+
+      // Список запрещённых имен файлов
+      const forbiddenFiles = ["radiation.jpeg", "logo.jpeg", "index.html", "health.jpeg", "bg.jpeg"];
+
+      if (filename !== "") {
+        // Проверка, содержится ли запрещённое имя файла в запросе
+        if (forbiddenFiles.some(forbiddenFile => filename.includes(forbiddenFile))) {
+          alert("Захищений файл. Завантаження заборонено.");
+          filenameInput.value = ''; // Очистка поля ввода после вывода предупреждения
+        } else {
+          window.location.href = "/download?file=" + "/" + encodeURIComponent(filename);
+          filenameInput.value = ''; // Очистка поля ввода после отправки команды
+        }
+      }
+    }
+
+    // Функция для обновления консоли
+    function updateConsole() {
+      fetch("/consoleOutput")
+        .then(response => response.text())
+        .then(data => {
+          const consoleDiv = document.getElementById("console");
+          const isScrolledToBottom = consoleDiv.scrollHeight - consoleDiv.clientHeight <= consoleDiv.scrollTop + 1;
+          consoleDiv.innerHTML = data;
+          if (isScrolledToBottom) {
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+          }
+        });
+    }
+
+    // Обновление консоли каждую секунду
+    setInterval(updateConsole, 1000);
+
+    // Функция для загрузки прошивки
+    function uploadFirmware() {
+      const firmwareInput = document.getElementById("firmwareInput");
+      if (firmwareInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append("file", firmwareInput.files[0]);
+
+        fetch("/update", {
+          method: "POST",
+          body: formData
+        })
+        .then(response => response.text())
+        .then(data => {
+          console.log(data);
+          alert(data); // Выводим сообщение об успехе или ошибке
+        });
+      }
+    }
+  </script>
+</body>
+</html>
