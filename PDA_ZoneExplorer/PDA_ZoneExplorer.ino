@@ -222,13 +222,13 @@ void setup() {
   TJpgDec.drawFsJpg(0, 0, "/images/logo.jpeg", LittleFS);
   delay(2000);
   TJpgDec.drawFsJpg(0, 0, "/images/bg.jpeg", LittleFS);
-  delay(2000);
   mp3.playTrack(1);
   xTaskCreatePinnedToCore(core0, "Task0", 10000, NULL, 1, &Task0, 0);
   PrintMainPage(1);
   CheckPlayersDeath();
   nfc.begin();
   startListeningToNFC();
+  cleardisplay(5);
 }
 
 
@@ -240,11 +240,6 @@ void loop() {
   right.tick();
 
   DateTime now = rtc.getTime();
-
-
-
-
-
 
 
 

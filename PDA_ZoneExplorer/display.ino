@@ -1,6 +1,6 @@
 void cleardisplay(int var) {
   if (var == 0) {
-    tft.fillRect(4, 18, 153, 95, TFT_BG);
+    tft.fillRect(4, 21, 311, 213, TFT_BG);
   } else if (var == 1) {
     tft.fillRect(5, 113, 151, 10, TFT_BG);
   } else if (var == 2) {
@@ -9,6 +9,8 @@ void cleardisplay(int var) {
     tft.fillRect(24, 47, 115, 10, TFT_BG);
   } else if (var == 4) {
     tft.fillRect(24, 68, 115, 10, TFT_BG);
+  } else if (var == 5) {
+    tft.fillRect(273, 0, 43, 15, TFT_TEXT);
   }
 }
 
@@ -203,6 +205,10 @@ void printTime() {
   tft.print(":");
   if (now.minute <= 9) { tft.print("0"); }
   tft.print(now.minute);
+}
+
+void printBattery(){
+  cleardisplay(5);
 }
 
 

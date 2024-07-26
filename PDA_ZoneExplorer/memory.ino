@@ -138,7 +138,7 @@ void readFileContent(const char* filename) {
 
 
 void createNewLogFile() {
-  currentLogFileName = "/log" + String(currentLogIndex) + ".txt";
+  currentLogFileName = "/log/log" + String(currentLogIndex) + ".txt";
   logFile = LittleFS.open(currentLogFileName, "w");
   if (!logFile) {
      Serial2Webln("Failed to create log file");
@@ -168,7 +168,7 @@ void writeLog(const char* message) {
 
 
 void loadLogIndex() {
-  File indexFile = LittleFS.open("/logIndex.txt", "r");
+  File indexFile = LittleFS.open("/log/logIndex.txt", "r");
   if (!indexFile) {
      Serial2Webln("Failed to load log index, starting from 0");
     currentLogIndex = 0;
@@ -179,7 +179,7 @@ void loadLogIndex() {
 }
 
 void saveLogIndex() {
-  File indexFile = LittleFS.open("/logIndex.txt", "w");
+  File indexFile = LittleFS.open("/log/logIndex.txt", "w");
   if (!indexFile) {
      Serial2Webln("Failed to save log index");
     return;
@@ -190,22 +190,22 @@ void saveLogIndex() {
 
 
 void deleteFile(const String& filename) {
-if(String(filename) == "/armor.jpeg"){
+if(String(filename) == "/images/armor.jpeg"){
     Serial2Webln("Захищений файл. Видалення заборонено.");
     return;
-  } else if(String(filename) == "/bg.jpeg"){
+  } else if(String(filename) == "/images/bg.jpeg"){
     Serial2Webln("Захищений файл. Видалення заборонено.");
     return;
-  }else if(String(filename) == "/health.jpeg"){
+  }else if(String(filename) == "/images/health.jpeg"){
     Serial2Webln("Захищений файл. Видалення заборонено.");
     return;
-  }else if(String(filename) == "/index.html"){
+  }else if(String(filename) == "/images/index.html"){
     Serial2Webln("Захищений файл. Видалення заборонено.");
     return;
-  }else if(String(filename) == "/logo.jpeg"){
+  }else if(String(filename) == "/images/logo.jpeg"){
     Serial2Webln("Захищений файл. Видалення заборонено.");
     return;
-  }else if(String(filename) == "/radiation.jpeg"){
+  }else if(String(filename) == "/images/radiation.jpeg"){
     Serial2Webln("Захищений файл. Видалення заборонено.");
     return;
   }
@@ -223,7 +223,7 @@ if(String(filename) == "/armor.jpeg"){
 void clearLogs() {
   String FileName;
   for (int i = 0; i < maxLogFiles; i++) {
-    FileName = "/log" + String(i) + ".txt";
+    FileName = "/log/log" + String(i) + ".txt";
     deleteFile(FileName);
   }
 }
