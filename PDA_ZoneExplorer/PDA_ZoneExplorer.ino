@@ -21,7 +21,7 @@ const String VERS = "std 0.2.5";
 #define DebugWiFiPassword "viktor26"
 
 
-#define PN532_IRQ 19
+#define PN532_IRQ 32
 #define PN532_RESET 13
 #define MP3_RX_PIN 4               //GPIO4/D2 to DFPlayer Mini TX
 #define MP3_TX_PIN 5               //GPIO5/D1 to DFPlayer Mini RX
@@ -32,8 +32,8 @@ const String VERS = "std 0.2.5";
 
 #define TFT_BG 0x0000
 #define TFT_TEXT 0xbdd6
-#define TFT_HEALTH 0xc827
-#define TFT_ARMOR 0x7bdd
+#define TFT_HEALTH 0xe081
+#define TFT_ARMOR 0x02b6
 #define TFT_GOOD 0x6fd3
 #define TFT_WARNING 0xdee8
 #define TFT_ALARM 0xf800
@@ -129,10 +129,10 @@ struct DecodedCard {
 DecodedCard card;
 
 Button ok(0);
-Button up(12);
-Button down(14);
-Button left(27);
-Button right(26);
+Button up(35);
+Button down(36);
+Button left(34);
+Button right(39);
 
 TFT_eSPI tft = TFT_eSPI();
 
@@ -219,9 +219,10 @@ void setup() {
   tft.fillScreen(TFT_BG);
   TJpgDec.setSwapBytes(true);
   TJpgDec.setCallback(tft_output);
-  TJpgDec.drawFsJpg(0, 0, "/logo.jpeg", LittleFS);
+  TJpgDec.drawFsJpg(0, 0, "/images/logo.jpeg", LittleFS);
   delay(2000);
-  TJpgDec.drawFsJpg(0, 0, "/bg.jpeg", LittleFS);
+  TJpgDec.drawFsJpg(0, 0, "/images/bg.jpeg", LittleFS);
+  delay(2000);
   mp3.playTrack(1);
   xTaskCreatePinnedToCore(core0, "Task0", 10000, NULL, 1, &Task0, 0);
   PrintMainPage(1);
