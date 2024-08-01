@@ -1,6 +1,11 @@
+# Arstai:PDA [InDEV]
+
+## Схема підключення
 ![promo](/Schem.png)
 
-Parts:
+
+
+## Копмоненти:
 - ESP-WROOM-32 (or dev module)
 - TFT Display 2.8" ILI9341
 - RTC DS3231
