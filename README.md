@@ -1,5 +1,4 @@
-
-https://github.com/wainmurk/ARSTAI-PDA/blob/main/Schem.png?raw=true
+![promo](/Schem.png)
 
 Parts:
 - ESP-WROOM-32 (or dev module)
