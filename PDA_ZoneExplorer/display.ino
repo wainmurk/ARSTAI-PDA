@@ -2,7 +2,7 @@ void cleardisplay(int var) {
   if (var == 0) {
     tft.fillRect(4, 21, 311, 213, TFT_BG);
   } else if (var == 1) {
-    tft.fillRect(5, 113, 151, 10, TFT_BG);
+    tft.fillRect(0, 0, 55, 16, TFT_BG);
   } else if (var == 2) {
     tft.fillRect(24, 27, 115, 10, TFT_BG);
   } else if (var == 3) {
@@ -10,7 +10,7 @@ void cleardisplay(int var) {
   } else if (var == 4) {
     tft.fillRect(24, 68, 115, 10, TFT_BG);
   } else if (var == 5) {
-    tft.fillRect(273, 0, 43, 15, TFT_TEXT);
+    tft.fillRect(272, 0, 45, 15, TFT_BG);
   }
 }
 
@@ -20,18 +20,18 @@ void printdisplay(int page) {
 
   if (page == 0) {
     cleardisplay(0);
-    TJpgDec.drawFsJpg(6, 26, "/health.jpeg", LittleFS);
-    drawProgressBar(24, 27, 115, 10, data.health, TFT_TEXT, TFT_HEALTH);
-    TJpgDec.drawFsJpg(6, 44, "/armor.jpeg", LittleFS);
-    drawProgressBar(24, 47, 115, 10, data.armor, TFT_TEXT, TFT_ARMOR);
-    TJpgDec.drawFsJpg(7, 64, "/radiation.jpeg", LittleFS);
-    tft.setTextSize(1);
-    tft.setCursor(27, 68);
+    TJpgDec.drawFsJpg(18, 48, "/images/health.jpeg", LittleFS);
+    drawProgressBar(58, 54, 228, 16, data.health, TFT_TEXT, TFT_HEALTH);
+    TJpgDec.drawFsJpg(18, 86, "/images/armor.jpeg", LittleFS);
+    drawProgressBar(58, 94, 228, 16, data.armor, TFT_TEXT, TFT_ARMOR);
+    TJpgDec.drawFsJpg(18, 125, "/images/radiation.jpeg", LittleFS);
+    tft.setTextSize(2);
+    tft.setCursor(58, 136);
     if (data.radiation < 250000) tft.print(data.radiation);
     else tft.print(">250000");
     tft.print(" мЗв");
-    tft.setCursor(6, 82);
-    tft.print("Статус: ");
+    tft.setCursor(12, 164);
+    tft.print("Рад.фон: ");
     if (isWarning and !isAlarm) {
       tft.setTextColor(TFT_WARNING);
       tft.print("Увага!");
@@ -44,6 +44,9 @@ void printdisplay(int page) {
       tft.setTextColor(TFT_GOOD);
       tft.print("Чисто.");
     }
+    tft.setTextColor(TFT_TEXT);
+    tft.setCursor(12, 190);
+    tft.print("Аномалії: ");
   } else if (page == 1) {
     cleardisplay(0);
     tft.setTextSize(2);
@@ -84,14 +87,15 @@ void printdisplay(int page) {
     if (currentsievert < 100) tft.setTextColor(TFT_TEXT);
     else if (currentsievert >= 100 and currentsievert < 10000) tft.setTextColor(TFT_WARNING);
     else if (currentsievert >= 10000) tft.setTextColor(TFT_ALARM);
-    tft.setTextSize(3);
+    tft.setTextSize(6);
+    currentsievert=12345678;
     centerText(currentsievert);
 
 
 
-    tft.setTextSize(2);
+    tft.setTextSize(3);
     tft.setTextColor(TFT_TEXT);
-    tft.setCursor(50, 82);
+    tft.setCursor(125, 180);
     tft.print("мЗв/c");
 
 
@@ -193,13 +197,7 @@ void printTime() {
   DateTime now = rtc.getTime();
   cleardisplay(1);
   tft.setTextSize(1);
-  tft.setCursor(48, 114);
-  if (now.date <= 9) { tft.print("0"); }
-  tft.print(now.date);
-  tft.print(".");
-  if (now.month <= 9) { tft.print("0"); }
-  tft.print(now.month);
-  tft.print(" ");
+  tft.setCursor(11, 5);
   if (now.hour <= 9) { tft.print("0"); }
   tft.print(now.hour);
   tft.print(":");
@@ -209,6 +207,10 @@ void printTime() {
 
 void printBattery(){
   cleardisplay(5);
+  tft.setTextSize(1);
+  tft.setCursor(282, 5);
+  tft.print("100%");
+  tft.setTextSize(1);
 }
 
 
@@ -281,11 +283,11 @@ void centerText(int number) {
   String numStr = String(number);
   
   // Получить ширину текста в пикселях (8 пикселей на символ для стандартного шрифта)
-  int16_t textWidth = numStr.length() * 18;
+  int16_t textWidth = numStr.length() * 36;
 
   // Вычислить начальную позицию для центрирования
-  int xPos = 80 - textWidth / 2;
-  int yPos = 45; // Установленное значение y
+  int xPos = 160 - textWidth / 2;
+  int yPos = 80; // Установленное значение y
   
   // Установить курсор и вывести текст
   tft.setCursor(xPos, yPos);

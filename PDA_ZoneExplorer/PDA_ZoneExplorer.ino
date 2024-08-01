@@ -21,7 +21,7 @@ const String VERS = "std 0.2.5";
 #define DebugWiFiPassword "viktor26"
 
 
-#define PN532_IRQ 32
+#define PN532_IRQ 19
 #define PN532_RESET 13
 #define MP3_RX_PIN 4               //GPIO4/D2 to DFPlayer Mini TX
 #define MP3_TX_PIN 5               //GPIO5/D1 to DFPlayer Mini RX
@@ -160,11 +160,11 @@ unsigned long lastScanTime = 0;
 const unsigned long scanInterval = 1000; // Интервал сканирования 5 секунд
 
 
-
 Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 void setup() {
   Serial.begin(115200);
-
+  pinMode(15, OUTPUT);
+  digitalWrite(15, 1);
 
   if (!LittleFS.begin(false)) {
     Serial.println("LittleFS initialisation failed!");
@@ -202,6 +202,17 @@ void setup() {
 
   mp3Serial.enableRx(true);  //enable interrupts on RX-pin for better response detection, less overhead than mp3Serial.listen()
 
+
+
+  uint32_t versiondata = nfc.getFirmwareVersion();
+  if (! versiondata) {
+    Serial.print("Didn't find PN53x board");
+    while (1); // halt
+  }
+
+
+
+
   if (mp3.getStatus()) serialLog("Помилка у роботі mp3.");
 
   mp3Serial.enableRx(false);  //disable interrupts on RX-pin, less overhead than mp3Serial.listen()
@@ -215,7 +226,7 @@ void setup() {
 
 
   tft.init();
-  tft.setRotation(1);
+  tft.setRotation(3);
   tft.fillScreen(TFT_BG);
   TJpgDec.setSwapBytes(true);
   TJpgDec.setCallback(tft_output);
@@ -228,7 +239,8 @@ void setup() {
   CheckPlayersDeath();
   nfc.begin();
   startListeningToNFC();
-  cleardisplay(5);
+  printBattery();
+  printTime();
 }
 
 
