@@ -20,17 +20,17 @@ void printdisplay(int page) {
 
   if (page == 0) {
     cleardisplay(0);
-    TJpgDec.drawFsJpg(18, 48, "/images/health.jpeg", LittleFS);
-    drawProgressBar(58, 54, 228, 16, data.health, TFT_TEXT, TFT_HEALTH);
-    TJpgDec.drawFsJpg(18, 86, "/images/armor.jpeg", LittleFS);
-    drawProgressBar(58, 94, 228, 16, data.armor, TFT_TEXT, TFT_ARMOR);
-    TJpgDec.drawFsJpg(18, 125, "/images/radiation.jpeg", LittleFS);
+    TJpgDec.drawFsJpg(18, 38, "/images/health.jpeg", LittleFS);
+    drawProgressBar(58, 44, 228, 16, data.health, TFT_TEXT, TFT_HEALTH);
+    TJpgDec.drawFsJpg(18, 76, "/images/armor.jpeg", LittleFS);
+    drawProgressBar(58, 84, 228, 16, data.armor, TFT_TEXT, TFT_ARMOR);
+    TJpgDec.drawFsJpg(18, 115, "/images/radiation.jpeg", LittleFS);
     tft.setTextSize(2);
-    tft.setCursor(58, 136);
+    tft.setCursor(58, 122);
     if (data.radiation < 250000) tft.print(data.radiation);
     else tft.print(">250000");
     tft.print(" мЗв");
-    tft.setCursor(12, 164);
+    tft.setCursor(12, 154);
     tft.print("Рад.фон: ");
     if (isWarning and !isAlarm) {
       tft.setTextColor(TFT_WARNING);
@@ -45,39 +45,39 @@ void printdisplay(int page) {
       tft.print("Чисто.");
     }
     tft.setTextColor(TFT_TEXT);
-    tft.setCursor(12, 190);
+    tft.setCursor(12, 180);
     tft.print("Аномалії: ");
   } else if (page == 1) {
     cleardisplay(0);
-    tft.setTextSize(2);
-    tft.setCursor(45, 20);
+    tft.setTextSize(3);
+    tft.setCursor(100, 25);
     tft.print("Захист");
-    tft.setTextSize(1);
-    tft.setCursor(8, 40);
+    tft.setTextSize(2);
+    tft.setCursor(12, 60);
     tft.print("Вогонь");
-    tft.setCursor(8, 50);
+    tft.setCursor(12, 80);
     tft.print("Гравітац.");
-    tft.setCursor(8, 60);
+    tft.setCursor(12, 100);
     tft.print("Кислота");
-    tft.setCursor(8, 70);
+    tft.setCursor(12, 120);
     tft.print("Електро");
-    tft.setCursor(8, 80);
+    tft.setCursor(12, 140);
     tft.print("Радіація");
-    tft.setCursor(8, 90);
+    tft.setCursor(12, 160);
     tft.print("Психічн.");
 
 
-    tft.setCursor(70, 40);
+    tft.setCursor(120, 60);
     tft.print(WhatPercent(data.fire_protection));
-    tft.setCursor(70, 50);
+    tft.setCursor(120, 80);
     tft.print(WhatPercent(data.gravi_protection));
-    tft.setCursor(70, 60);
+    tft.setCursor(120, 100);
     tft.print(WhatPercent(data.acid_protection));
-    tft.setCursor(70, 70);
+    tft.setCursor(120, 120);
     tft.print(WhatPercent(data.electro_protection));
-    tft.setCursor(70, 80);
+    tft.setCursor(120, 140);
     tft.print(WhatPercent(data.radiation_protection));
-    tft.setCursor(70, 90);
+    tft.setCursor(120, 160);
     tft.print(WhatPercent(data.psy_protection));
 
 
@@ -130,11 +130,11 @@ void printdisplay(int page) {
 
   } else if (page == 4) {
     cleardisplay(0);
-    tft.setCursor(6, 20);
+    tft.setCursor(12, 30);
     tft.setTextColor(TFT_TEXT);
-    tft.setTextSize(1);
+    tft.setTextSize(2);
     tft.print(card.card_text_str);
-    tft.setCursor(6, 30);
+    tft.setCursor(12, 50);
     tft.print("Стан:");
     switch (card.usage_method) {
       case 0:
@@ -157,9 +157,9 @@ void printdisplay(int page) {
 
     tft.setTextColor(TFT_TEXT);
     if (card.usage_method == 1 or card.usage_method == 3) {
-      tft.setCursor(16, 48);
+      tft.setCursor(35, 90);
       tft.print("Не забирайте картку.");
-      tft.setCursor(46, 60);
+      tft.setCursor(80, 120);
       tft.print("Застосувати?");
       drawButtons();
     } else {
@@ -169,12 +169,13 @@ void printdisplay(int page) {
     }
   } else if (page == 5) {
     cleardisplay(0);
-    tft.setCursor(10, 20);
+    tft.setTextSize(2);
+    tft.setCursor(12, 30);
     tft.setTextColor(TFT_ALARM);
     tft.print("Сталась якась помилка");
-    tft.setCursor(10, 30);
+    tft.setCursor(12, 60);
     tft.print("Спробуйте ще раз.");
-    tft.setCursor(10, 50);
+    tft.setCursor(12, 90);
     tft.print("Не забирайте картку!");
     delay(3000);
     currPage = 4;
@@ -182,8 +183,9 @@ void printdisplay(int page) {
   } else if (page == 6) {
   } else if (page == 99) {
     cleardisplay(0);
-    tft.setCursor(10, 20);
+    tft.setCursor(14, 40);
     tft.setTextColor(TFT_ALARM);
+    tft.setTextSize(2);
     if(WEB)tft.print("Веб сервер активовано.");else tft.print("Веб сервер вимкнуто.");
     delay(2000);
     currPage = 0;
@@ -228,26 +230,26 @@ void drawProgressBar(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t per
 void drawButtons() {
   uint16_t unselectedColor = 0x4A4A4A;  // Цвет невыбранной кнопки
 
-  tft.setTextSize(2);
-  int buttonWidth = 50;
-  int buttonHeight = 30;
+  tft.setTextSize(3);
+  int buttonWidth = 90;
+  int buttonHeight = 40;
   int buttonRadius = 10;
-  int buttonYOffset = 30;
-  int buttonXOffset = 16;
+  int buttonYOffset = 60;
+  int buttonXOffset = 45;
 
   int yCenter = (tft.height() - buttonHeight) / 2 + buttonYOffset;
 
   // Отрисовка кнопки "Ні"
   if (!selectedButton) {
-    tft.fillRoundRect(buttonXOffset + 78, yCenter, buttonWidth, buttonHeight, buttonRadius, TFT_WHITE);
-    tft.drawRoundRect(buttonXOffset + 78, yCenter, buttonWidth, buttonHeight, buttonRadius, TFT_DARKGREY);
+    tft.fillRoundRect(buttonXOffset + 140, yCenter, buttonWidth, buttonHeight, buttonRadius, TFT_WHITE);
+    tft.drawRoundRect(buttonXOffset + 140, yCenter, buttonWidth, buttonHeight, buttonRadius, TFT_DARKGREY);
     tft.setTextColor(TFT_BLACK, TFT_WHITE);
   } else {
-    tft.fillRoundRect(buttonXOffset + 78, yCenter, buttonWidth, buttonHeight, buttonRadius, unselectedColor);
-    tft.drawRoundRect(buttonXOffset + 78, yCenter, buttonWidth, buttonHeight, buttonRadius, TFT_DARKGREY);
+    tft.fillRoundRect(buttonXOffset + 140, yCenter, buttonWidth, buttonHeight, buttonRadius, unselectedColor);
+    tft.drawRoundRect(buttonXOffset + 140, yCenter, buttonWidth, buttonHeight, buttonRadius, TFT_DARKGREY);
     tft.setTextColor(TFT_WHITE, unselectedColor);
   }
-  tft.setCursor(buttonXOffset + 104 + (buttonWidth - tft.textWidth("Так")) / 2, yCenter + (buttonHeight - tft.fontHeight()) / 2 - 0);  // Центрируем текст внутри кнопки
+  tft.setCursor(buttonXOffset + 175 + (buttonWidth - tft.textWidth("Так")) / 2, yCenter + (buttonHeight - tft.fontHeight()) / 2 - 0);  // Центрируем текст внутри кнопки
   tft.print("Ні");
 
 

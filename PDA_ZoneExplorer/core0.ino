@@ -238,9 +238,11 @@ void handleCardDetected() {
         if (success) {
           yes++;
         } else {
+          readerDisabled = true;
           return;
         }
       } else {
+        readerDisabled = true;
         return;
       }
       for (int block = 0; block < 3; block++) {
@@ -253,12 +255,15 @@ void handleCardDetected() {
               card_text_index += 16;
               yes++;
             } else {
+              readerDisabled = true;
               return;
             }
           } else {
+            readerDisabled = true;
             return;
           }
         } else {
+          readerDisabled = true;
           return;
         }
       }
