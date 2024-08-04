@@ -103,6 +103,7 @@ struct Data {
   int radiation_protection = 0;
   int psy_protection = 0;
 
+  bool is_npc = 0;
   bool is_adept = 0;
   bool is_dead = 0;
   bool is_zombie = 0;
@@ -254,10 +255,13 @@ void setup() {
   CheckPlayersDeath();
   printBattery();
   printTime();
+
 }
 
 
 void loop() {
+
+
   ok.tick();
   up.tick();
   down.tick();
@@ -276,7 +280,7 @@ void loop() {
       CheckPlayersDeath();
     } else {
       if (globalUpdate) {
-        currPage = 3;
+        currPage = 9;
         update = 1;
         globalUpdate = 0;
       }
@@ -303,23 +307,24 @@ void loop() {
 
   if (data.health != prev_health and currPage == 0) {
     cleardisplay(2);
-    drawProgressBar(24, 27, 115, 10, data.health, TFT_TEXT, TFT_HEALTH);
+    drawProgressBar(58, 44, 228, 16, data.health, TFT_TEXT, TFT_HEALTH);
     prev_health = data.health;
   }
 
   if (data.armor != prev_armor and currPage == 0) {
     cleardisplay(3);
-    drawProgressBar(24, 47, 115, 10, data.armor, TFT_TEXT, TFT_ARMOR);
+    drawProgressBar(58, 84, 228, 16, data.armor, TFT_TEXT, TFT_ARMOR);
     prev_armor = data.armor;
   }
   if (data.radiation != prev_radiation and currPage == 0) {
     cleardisplay(4);
-    tft.setTextSize(1);
-    tft.setCursor(27, 68);
+    tft.setTextSize(2);
+    tft.setCursor(58, 122);
     if (data.radiation < 250000) tft.print(data.radiation);
     else tft.print(">250000");
     tft.print(" мЗв");
     prev_radiation = data.radiation;
+    tft.setTextSize(1);
   }
 
 
@@ -344,26 +349,26 @@ void loop() {
 
 
 
-  if (currPage < 3) {
+  if (currPage < (4 + data.is_npc)) {
     if (left.click()) {
       currPage--;
-      if (currPage < 0) currPage = 2;
+      if (currPage < 0) currPage = (3 + data.is_npc);
       update = 1;
     }
     if (right.click()) {
       currPage++;
-      if (currPage > 2) currPage = 0;
+      if (currPage > (3 + data.is_npc)) currPage = 0;
       update = 1;
     }
   }
 
 
 
-  if (currPage == 4) {
+  if (currPage == 6) {
 
     if (left.click() or right.click()) {
       selectedButton = !selectedButton;
-      printdisplay(4);
+      printdisplay(6);
     }
 
     if (ok.click()) {
@@ -372,14 +377,14 @@ void loop() {
         applyCard(card.usage_method);
       }
       selectedButton = 1;
-      currPage = 0;
+      currPage = (data.is_dead) ?  9 : 0;
       update = 1;
       printTime();
     }
   }
 
 
-  if (currPage == 6) {
+  if (currPage == 4) {
     if (up.click()) {
       NPCselectedItem = (NPCselectedItem - 1 + NPCmenuItemsCount) % NPCmenuItemsCount;
       drawMenuNPC();
@@ -411,13 +416,8 @@ void loop() {
               drawMenuNPC();
           }
           break;
-        case 1: break;
-        case 4:
-        readerDisabled = true;
-          currPage = 0;
-          update = 1;
-          NPCselectedItem = 0;
-          break;
+        case 1: rescue();break;
+        case 4: break;
       }
     }
   }
@@ -429,11 +429,6 @@ void loop() {
     update = 1;
   }
 
-
-  if (left.hold()) {
-    currPage = 6;
-    update = 1;
-  }
 
 
   if (update == 1) {

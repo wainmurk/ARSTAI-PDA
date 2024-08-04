@@ -156,7 +156,7 @@ void core0(void *p) {
 
 
 
-      if (currPage != 4) {
+      if (currPage != 6 and currPage != 4) {
         if (readerDisabled) {
           if (millis() - timeLastCardRead > DELAY_BETWEEN_CARDS) {
             timeLastCardRead = millis();
@@ -312,7 +312,7 @@ void handleCardDetected() {
         serialLog(card_uid_str);
         serialLog("");
         cardreturntimer = millis();
-        currPage = 4;
+        currPage = 6;
         update = 1;
     }
 

@@ -60,9 +60,10 @@ printdisplay(currPage);
 }
 void dump_byte_array(byte *buffer, byte bufferSize) {
     for (byte i = 0; i < bufferSize; i++) {
-        Serial.print(buffer[i] < 0x10 ? " 0" : " ");
-        Serial.print(buffer[i], HEX);
+         Serial2Web(String(buffer[i] < 0x10 ? " 0" : " "));
+         Serial2Web(String(buffer[i], HEX));
     }
+   Serial2Webln(""); 
 }
 
 void CheckPlayersDeath() {
@@ -73,7 +74,7 @@ void CheckPlayersDeath() {
     data.is_dead = 1;
     data.radiation = 0;
     updateConfig();
-    currPage = 3;
+    currPage = 9;
     printdisplay(currPage);
     update = 1;
   } else {
@@ -84,7 +85,7 @@ void CheckPlayersDeath() {
       PrintMainPage(1);
       update = 1;
     }
-    if (currPage == 3) {
+    if (currPage == 9) {
       PrintMainPage(1);
       update = 1;
     }

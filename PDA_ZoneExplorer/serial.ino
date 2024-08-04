@@ -71,7 +71,9 @@ void handleCommand(const String& command) {
 
 
 void getVariableValue(const String& variable) {
-  if (variable == "usage_method") {
+  if (variable == "uid") {
+    dump_byte_array(card.uid, sizeof(card.uid));
+  }else if (variable == "usage_method") {
     Serial2Webln(String(card.usage_method));
   } else if (variable == "type") {
     Serial2Webln(String(card.type));
@@ -127,6 +129,8 @@ void getVariableValue(const String& variable) {
     Serial2Webln(String(data.is_nocked));
   } else if (variable == "is_ignor") {
     Serial2Webln(String(data.is_ignor));
+  } else if (variable == "is_npc") {
+    Serial2Webln(String(data.is_npc));
   } else {
     Serial2Webln("Невідома змінна.");
   }
@@ -135,66 +139,70 @@ void getVariableValue(const String& variable) {
 
 void debugVars() {
   Serial2Webln("=== LastScannedCard ===");
-  Serial2Webln("usage_method: ");
+  Serial2Web("uid: ");
+  dump_byte_array(card.uid, sizeof(card.uid));
+  Serial2Web("usage_method: ");
   Serial2Webln(String(card.usage_method));
-  Serial2Webln("type: ");
+  Serial2Web("type: ");
   Serial2Webln(String(card.type));
-  Serial2Webln("subtype: ");
+  Serial2Web("subtype: ");
   Serial2Webln(String(card.subtype));
-  Serial2Webln("protection_type: ");
+  Serial2Web("protection_type: ");
   Serial2Webln(String(card.protection_type));
-  Serial2Webln("percent: ");
+  Serial2Web("percent: ");
   Serial2Webln(String(card.percent));
-  Serial2Webln("value: ");
+  Serial2Web("value: ");
   Serial2Webln(String(card.value));
-  Serial2Webln("multiplier: ");
+  Serial2Web("multiplier: ");
   Serial2Webln(String(card.multiplier));
-  Serial2Webln("seconds: ");
+  Serial2Web("seconds: ");
   Serial2Webln(String(card.seconds));
-  Serial2Webln("minutes: ");
+  Serial2Web("minutes: ");
   Serial2Webln(String(card.minutes));
-  Serial2Webln("hours: ");
+  Serial2Web("hours: ");
   Serial2Webln(String(card.hours));
   Serial2Webln("==================");
   Serial2Webln("");
 
   Serial2Webln("=== PlayerData ===");
-  Serial2Webln("ssid: ");
+  Serial2Web("ssid: ");
   Serial2Webln(String(data.ssid));
-  Serial2Webln("pass: ");
+  Serial2Web("pass: ");
   Serial2Webln(String(data.pass));
-  Serial2Webln("adminpass: ");
+  Serial2Web("adminpass: ");
   Serial2Webln(String(data.adminpass));
-  Serial2Webln("health: ");
+  Serial2Web("health: ");
   Serial2Webln(String(data.health));
-  Serial2Webln("armor: ");
+  Serial2Web("armor: ");
   Serial2Webln(String(data.armor));
-  Serial2Webln("radiation: ");
+  Serial2Web("radiation: ");
   Serial2Webln(String(data.radiation));
-  Serial2Webln("fire_protection: ");
+  Serial2Web("fire_protection: ");
   Serial2Webln(String(data.fire_protection));
-  Serial2Webln("gravi_protection: ");
+  Serial2Web("gravi_protection: ");
   Serial2Webln(String(data.gravi_protection));
-  Serial2Webln("acid_protection: ");
+  Serial2Web("acid_protection: ");
   Serial2Webln(String(data.acid_protection));
-  Serial2Webln("electro_protection: ");
+  Serial2Web("electro_protection: ");
   Serial2Webln(String(data.electro_protection));
-  Serial2Webln("radiation_protection: ");
+  Serial2Web("radiation_protection: ");
   Serial2Webln(String(data.radiation_protection));
-  Serial2Webln("psy_protection: ");
+  Serial2Web("psy_protection: ");
   Serial2Webln(String(data.psy_protection));
-  Serial2Webln("is_adept: ");
+  Serial2Web("is_adept: ");
   Serial2Webln(String(data.is_adept));
-  Serial2Webln("is_dead: ");
+  Serial2Web("is_dead: ");
   Serial2Webln(String(data.is_dead));
-  Serial2Webln("is_zombie: ");
+  Serial2Web("is_zombie: ");
   Serial2Webln(String(data.is_zombie));
-  Serial2Webln("is_under_control: ");
+  Serial2Web("is_under_control: ");
   Serial2Webln(String(data.is_under_control));
-  Serial2Webln("is_nocked: ");
+  Serial2Web("is_nocked: ");
   Serial2Webln(String(data.is_nocked));
-  Serial2Webln("is_ignor: ");
+  Serial2Web("is_ignor: ");
   Serial2Webln(String(data.is_ignor));
+  Serial2Web("is_npc: ");
+  Serial2Webln(String(data.is_npc));
   Serial2Webln("===============");
 }
 
@@ -264,6 +272,8 @@ void setVariableValue(const String& variable, const String& value) {
     data.is_nocked = value.toInt();
   } else if (variable == "is_ignor") {
     data.is_ignor = value.toInt();
+  } else if (variable == "is_npc") {
+    data.is_npc = value.toInt();
   } else {
     Serial2Webln("Невідома змінна.");
   }
@@ -324,6 +334,6 @@ void DoKill(const String& cause) {
   data.health = 0;
   data.is_dead = 1;
   serialLog("Вбито по причині: " + cause);
-  currPage = 3;
+  currPage = 9;
   printdisplay(currPage);
 }

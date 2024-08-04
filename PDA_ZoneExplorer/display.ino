@@ -4,11 +4,11 @@ void cleardisplay(int var) {
   } else if (var == 1) {
     tft.fillRect(0, 0, 55, 16, TFT_BG);
   } else if (var == 2) {
-    tft.fillRect(24, 27, 115, 10, TFT_BG);
+    tft.fillRect(58, 44, 228, 16, TFT_BG);
   } else if (var == 3) {
-    tft.fillRect(24, 47, 115, 10, TFT_BG);
+    tft.fillRect(58, 84, 228, 16, TFT_BG);
   } else if (var == 4) {
-    tft.fillRect(24, 68, 115, 10, TFT_BG);
+    tft.fillRect(58, 120, 228, 16, TFT_BG);
   } else if (var == 5) {
     tft.fillRect(272, 0, 45, 15, TFT_BG);
   }
@@ -112,6 +112,10 @@ void printdisplay(int page) {
 
 
   } else if (page == 3) {
+cleardisplay(0);
+  }
+
+  else if (page == 9) {
     cleardisplay(0);
     tft.setCursor(70, 70);
     tft.setTextSize(5);
@@ -128,7 +132,7 @@ void printdisplay(int page) {
       tft.print(causeOfDeath);
     }
 
-  } else if (page == 4) {
+  } else if (page == 6) {
     cleardisplay(0);
     tft.setCursor(12, 30);
     tft.setTextColor(TFT_TEXT);
@@ -164,7 +168,7 @@ void printdisplay(int page) {
       drawButtons();
     } else {
       delay(1000);
-      currPage = 0;
+      currPage = (data.is_dead) ?  9 : 0;
       printdisplay(currPage);
     }
   } else if (page == 5) {
@@ -180,8 +184,8 @@ void printdisplay(int page) {
     delay(3000);
     currPage = 4;
     printdisplay(currPage);
-  } else if (page == 6) {
-drawMenuNPC();
+  } else if (page == 4) {
+   drawMenuNPC();
   } else if (page == 99) {
     cleardisplay(0);
     tft.setCursor(14, 40);
@@ -197,7 +201,6 @@ drawMenuNPC();
 }
 
 void drawMenuNPC() {
-readerDisabled = false;
 
   cleardisplay(0);
   tft.setTextSize(2);
