@@ -48,7 +48,7 @@ void handleCommand(const String& command) {
   } else if (command == "alog") {
     Serial2Webln("Актульний лог: " + currentLogFileName);
   } else if (command == "files") {
-    listFiles("/");
+    listFiles("/", 2);
   } else if (command == "") {
   } else if (command.startsWith("read ")) {
     String filename = "/" + command.substring(5);

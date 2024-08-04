@@ -70,15 +70,15 @@ void deleteConfigFile() {
 }
 
 
-void listFiles(const char* dirname) {
-  Serial2Webln("Список файлів:");
+void listFiles(const char* dirname, uint8_t levels = 0) {
+  Serial2Webln("Список файлів: " + String(dirname));
   File root = LittleFS.open(dirname);
   if (!root) {
-     Serial2Webln("Failed to open directory");
+    Serial2Webln("Не вдалося відкрити директорію: " + String(dirname));
     return;
   }
   if (!root.isDirectory()) {
-     Serial2Webln("Not a directory");
+    Serial2Webln("Це не директорія: " + String(dirname));
     return;
   }
 
@@ -86,8 +86,11 @@ void listFiles(const char* dirname) {
   while (file) {
     if (file.isDirectory()) {
       Serial2Web("  Папка : ");
-      Serial2Web(file.name());
-     Serial2Webln(" [directory]");
+      Serial2Webln(file.name());
+      if (levels) {
+        String path = String(dirname)  + file.name();
+        listFiles(path.c_str(), levels - 1);
+      }
     } else {
       Serial2Web("  Файл: ");
       Serial2Web(file.name());
@@ -96,28 +99,28 @@ void listFiles(const char* dirname) {
     }
     file = root.openNextFile();
   }
-   Serial2Webln("");
+  Serial2Webln("");
   root.close();
 }
 
 
 void readFileContent(const char* filename) {
-  if(String(filename) == "/armor.jpeg"){
+  if(String(filename) == "/images/armor.jpeg"){
     Serial2Webln("Захищений файл. Перегляд заборонено.");
     return;
-  } else if(String(filename) == "/bg.jpeg"){
+  } else if(String(filename) == "/images/bg.jpeg"){
     Serial2Webln("Захищений файл. Перегляд заборонено.");
     return;
-  }else if(String(filename) == "/health.jpeg"){
+  }else if(String(filename) == "/images/health.jpeg"){
     Serial2Webln("Захищений файл. Перегляд заборонено.");
     return;
   }else if(String(filename) == "/index.html"){
     Serial2Webln("Захищений файл. Перегляд заборонено.");
     return;
-  }else if(String(filename) == "/logo.jpeg"){
+  }else if(String(filename) == "/images/logo.jpeg"){
     Serial2Webln("Захищений файл. Перегляд заборонено.");
     return;
-  }else if(String(filename) == "/radiation.jpeg"){
+  }else if(String(filename) == "/images/radiation.jpeg"){
     Serial2Webln("Захищений файл. Перегляд заборонено.");
     return;
   }
@@ -199,7 +202,7 @@ if(String(filename) == "/images/armor.jpeg"){
   }else if(String(filename) == "/images/health.jpeg"){
     Serial2Webln("Захищений файл. Видалення заборонено.");
     return;
-  }else if(String(filename) == "/images/index.html"){
+  }else if(String(filename) == "/index.html"){
     Serial2Webln("Захищений файл. Видалення заборонено.");
     return;
   }else if(String(filename) == "/images/logo.jpeg"){

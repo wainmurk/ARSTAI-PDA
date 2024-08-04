@@ -399,20 +399,18 @@ void loop() {
       switch (NPCselectedItem) {
         case 0:
           if (ChangeUsage(card.uid, 1,1)) {
-            Serial.println("RESET GOOD");
               tft.setTextSize(2);
               tft.setTextColor(TFT_GOOD);
               tft.setCursor(30, 200);
               tft.print("Успішно");
-              delay(1000);
+              delay(500);
               drawMenuNPC();
           } else {
-              Serial.println("RESET ERR");
               tft.setTextSize(2);
               tft.setTextColor(TFT_RED);
               tft.setCursor(30, 200);
               tft.print("Помилка");
-              delay(1000);
+              delay(500);
               drawMenuNPC();
           }
           break;
