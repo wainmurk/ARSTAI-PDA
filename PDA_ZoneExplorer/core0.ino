@@ -144,20 +144,25 @@ void core0(void *p) {
 
   for (;;) {
 
+
+  static uint32_t rebootTimer = millis();  // Важный костыль против зависания модуля!
+  if (millis() - rebootTimer >= 1000) {    // Таймер с периодом 1000 мс
+    rebootTimer = millis();                // Обновляем таймер
+    digitalWrite(RST_PIN, HIGH);           // Сбрасываем модуль
+    delayMicroseconds(2);                  // Ждем 2 мкс
+    digitalWrite(RST_PIN, LOW);            // Отпускаем сброс
+    mfrc522.PCD_Init();                    // Инициализируем заного
+  }
+
+
+
       if (currPage != 4) {
         if (readerDisabled) {
           if (millis() - timeLastCardRead > DELAY_BETWEEN_CARDS) {
+            timeLastCardRead = millis();
             readerDisabled = false;
-            startListeningToNFC();
-          }
-        } else {
-          irqCurr = digitalRead(PN532_IRQ);
-
-          if (irqCurr == LOW && irqPrev == HIGH) {
             handleCardDetected();
           }
-
-          irqPrev = irqCurr;
         }
       }
 
@@ -207,100 +212,112 @@ void StartWebServer() {
 
 
 
-void startListeningToNFC() {
-  irqPrev = irqCurr = HIGH;
-  if (!nfc.startPassiveTargetIDDetection(PN532_MIFARE_ISO14443A)) {
-  } else {
-    handleCardDetected();
-  }
-}
-
 void handleCardDetected() {
-  String card_uid_str;
-  uint8_t success = false;
-  uint8_t uid[] = { 0, 0, 0, 0, 0, 0, 0 };
-  uint8_t uidLength;
-  uint8_t card_text[48];
-  uint8_t block_data[16];
-  uint8_t card_data[16];
-  int block_numbers[] = { 8, 9, 10 };
-  int yes = 0;
+    String card_uid_str;
+    uint8_t success = false;
+    uint8_t card_uid[7];
+    uint8_t card_text[48];
+    uint8_t block_data[16];
+    uint8_t card_data[16];
+    byte buffer[18];
+    byte size = sizeof(buffer);
+    int block_numbers[] = { 8, 9, 10 };
+    int yes = 0;
 
-  success = nfc.readDetectedPassiveTargetID(card.uid, &uidLength);
-
-  if (success) {
-    if (uidLength == 4) {
-      uint8_t keya[6] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-      int card_text_index = 0;
-      success = nfc.mifareclassic_AuthenticateBlock(card.uid, uidLength, 4, 0, keya);
-      if (success) {
-        success = nfc.mifareclassic_ReadDataBlock(4, card_data);
-        if (success) {
-          yes++;
-        } else {
-          readerDisabled = true;
-          return;
-        }
-      } else {
+    if (!mfrc522.PICC_IsNewCardPresent()) {
         readerDisabled = true;
         return;
-      }
-      for (int block = 0; block < 3; block++) {
-        success = nfc.mifareclassic_AuthenticateBlock(card.uid, uidLength, block_numbers[block], 0, keya);
-        if (success) {
-          success = nfc.mifareclassic_ReadDataBlock(block_numbers[block], block_data);
-          if (success) {
-            if (card_text_index + 16 <= sizeof(card_text)) {
-              memcpy(card_text + card_text_index, block_data, 16);
-              card_text_index += 16;
-              yes++;
-            } else {
-              readerDisabled = true;
-              return;
-            }
-          } else {
+    }
+
+    if (!mfrc522.PICC_ReadCardSerial()) {
+        readerDisabled = true;
+        return;
+    }
+
+    MFRC522::PICC_Type piccType = mfrc522.PICC_GetType(mfrc522.uid.sak);
+    if (piccType != MFRC522::PICC_TYPE_MIFARE_MINI &&
+        piccType != MFRC522::PICC_TYPE_MIFARE_1K &&
+        piccType != MFRC522::PICC_TYPE_MIFARE_4K) {
+        readerDisabled = true;
+        return;
+    }
+
+    memcpy(card_uid, mfrc522.uid.uidByte, mfrc522.uid.size);
+    memcpy(card.uid, mfrc522.uid.uidByte, mfrc522.uid.size);
+
+    MFRC522::StatusCode status;
+    byte trailerBlock = 7;
+    status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, trailerBlock, &key, &(mfrc522.uid));
+    if (status != MFRC522::STATUS_OK) {
+        readerDisabled = true;
+        return;
+    }
+    status = mfrc522.MIFARE_Read(4, buffer, &size);
+    if (status != MFRC522::STATUS_OK) {
+        readerDisabled = true;
+        return;
+    }
+    yes++;
+    memcpy(card_data, buffer, 16);
+      for (byte i = 0; i < 16; i++) {
+      buffer[i] == 0;
+    }
+
+    int card_text_index = 0;
+    for (int block = 0; block < 3; block++) {
+        status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, block_numbers[block], &key, &(mfrc522.uid));
+        if (status != MFRC522::STATUS_OK) {
             readerDisabled = true;
             return;
-          }
-        } else {
-          readerDisabled = true;
-          return;
         }
-      }
-      card.card_text_str = "";
-      for (int i = 0; i < card_text_index; i++) {
-        if (card_text[i] != 0) {
-          card.card_text_str += (char)card_text[i];
+        status = mfrc522.MIFARE_Read(block_numbers[block], buffer, &size);
+        if (status != MFRC522::STATUS_OK) {
+            readerDisabled = true;
+            return;
         }
-      }
-    }
-    timeLastCardRead = millis();
-    if (yes == 4) {
-      String card_data_str;
-      SerialPrintTime();
-      serialLog("Відскановано: ");
-      serialLog(card.card_text_str);
-      for (uint8_t i = 0; i < 16; i++) {
-        card_data_str = card_data_str + String(card_data[i]);
-        if (i != 15) { card_data_str = card_data_str + ", "; }
-      }
-      for (uint8_t i = 0; i < 7; i++) {
-        card_uid_str = card_uid_str + String(card.uid[i]);
-        if (i != 15) { card_uid_str = card_uid_str + " "; }
-      }
-      decodecard(card_data);
-      serialLog(card_data_str);
-      serialLog("");
-      serialLog(card_uid_str);
-      serialLog("");
-      cardreturntimer = millis();
-      currPage = 4;
-      update = 1;
-    }
-  }
-  readerDisabled = true;
-}
 
+        if (card_text_index + 16 <= sizeof(card_text)) {
+            memcpy(card_text + card_text_index, buffer, 16);
+            card_text_index += 16;
+            yes++;
+        } else {
+            readerDisabled = true;
+            return;
+        }
+    }
+
+    card.card_text_str = "";
+    for (int i = 0; i < card_text_index; i++) {
+        if (card_text[i] != 0) {
+            card.card_text_str += (char)card_text[i];
+        }
+    }
+
+    if (yes == 4) {
+        String card_data_str;
+        SerialPrintTime();
+        serialLog("Відскановано: ");
+        serialLog(card.card_text_str);
+        for (uint8_t i = 0; i < 16; i++) {
+            card_data_str += String(card_data[i]);
+            if (i != 15) { card_data_str += ", "; }
+        }
+        for (uint8_t i = 0; i < mfrc522.uid.size; i++) {
+            card_uid_str += String(card_uid[i], HEX);
+            if (i != mfrc522.uid.size - 1) { card_uid_str += " "; }
+        }
+        decodecard(card_data);
+        serialLog(card_data_str);
+        serialLog("");
+        serialLog(card_uid_str);
+        serialLog("");
+        cardreturntimer = millis();
+        currPage = 4;
+        update = 1;
+    }
+
+    readerDisabled = true;
+}
 
 
 
@@ -324,36 +341,63 @@ void decodecard(uint8_t data[]) {
 }
 
 
-int MakeCardUsed(uint8_t *targetUID, uint8_t newValue) {
-  uint8_t uid[7] = { 0, 0, 0, 0, 0, 0, 0 };
-  uint8_t foundUidLength;
-  if (nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &foundUidLength)) {
-    uint8_t targetUidLength = sizeof(targetUID) / sizeof(targetUID[0]);
-    if (foundUidLength == targetUidLength && memcmp(uid, targetUID, targetUidLength) == 0) {
-      uint8_t keya[6] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-      if (nfc.mifareclassic_AuthenticateBlock(uid, foundUidLength, 4, 0, keya)) {
-        uint8_t data[16];
-        if (nfc.mifareclassic_ReadDataBlock(4, data)) {
-          data[0] = newValue;
-          if (nfc.mifareclassic_WriteDataBlock(4, data)) {
-            if (nfc.mifareclassic_ReadDataBlock(4, data)) {
-              if (data[0] == newValue) {
-                return 1;
-              }
-            }
-          }
-        }
-      }
-    } else {
-      serialLog("=========[ANTICHEAT]=========");
-      SerialPrintTime();
-      serialLog("Виявлена спроба обходу системи карток.");
-      serialLog("=========");
-    }
-  }
 
-  return 0;
+int ChangeUsage(uint8_t *targetUID, uint8_t newValue, bool bypass) {
+    // Проверка наличия новой карты
+    if (!mfrc522.PICC_IsNewCardPresent()) {
+        return 0;
+    }
+
+    // Чтение серийного номера карты
+    if (!mfrc522.PICC_ReadCardSerial()) {
+        return 0;
+    }
+
+    if (memcmp(mfrc522.uid.uidByte, targetUID, 7) == 0 or bypass == 1) {
+        MFRC522::StatusCode status;
+
+        // Аутентификация блока 4
+        status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, 4, &key, &(mfrc522.uid));
+        if (status != MFRC522::STATUS_OK) {
+            return 0;
+        }
+
+        byte data[18];
+        byte size = sizeof(data);
+        
+        // Чтение блока 4
+        status = mfrc522.MIFARE_Read(4, data, &size);
+        if (status != MFRC522::STATUS_OK) {
+            return 0;
+        }
+        // Запись нового значения в блок 4
+        data[0] = newValue;
+        status = mfrc522.MIFARE_Write(4, data, 16);
+        if (status != MFRC522::STATUS_OK) {
+            return 0;
+        }
+
+        // Проверка записи
+        status = mfrc522.MIFARE_Read(4, data, &size);
+        if (status != MFRC522::STATUS_OK) {
+            return 0;
+        }
+
+        if (data[0] == newValue) {
+            return 1;
+        }
+    } else {
+        // Античит: выводим сообщение о попытке обхода
+        serialLog("=========[ANTICHEAT]=========");
+        SerialPrintTime();
+        serialLog("Виявлена спроба обходу системи карток.");
+        serialLog("=========");
+    }
+    return 0;
 }
+
+
+
 
 
 void startWiFiScan() {

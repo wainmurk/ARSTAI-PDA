@@ -113,15 +113,15 @@ void printdisplay(int page) {
 
   } else if (page == 3) {
     cleardisplay(0);
-    tft.setCursor(40, 35);
-    tft.setTextSize(3);
+    tft.setCursor(70, 70);
+    tft.setTextSize(5);
     tft.setTextColor(TFT_ALARM);
     tft.print("Помер");
     tft.setTextColor(TFT_TEXT);
-    tft.setCursor(55, 80);
-    tft.setTextSize(1);
+    tft.setCursor(100, 160);
+    tft.setTextSize(2);
     tft.print("Причина:");
-    tft.setCursor(20, 92);
+    tft.setCursor(20, 200);
     if (causeOfDeath == "") {
       tft.print("Невідома.");
     } else {
@@ -181,6 +181,7 @@ void printdisplay(int page) {
     currPage = 4;
     printdisplay(currPage);
   } else if (page == 6) {
+drawMenuNPC();
   } else if (page == 99) {
     cleardisplay(0);
     tft.setCursor(14, 40);
@@ -193,6 +194,24 @@ void printdisplay(int page) {
   }
   tft.setTextSize(1);
   tft.setTextColor(TFT_TEXT);
+}
+
+void drawMenuNPC() {
+readerDisabled = false;
+
+  cleardisplay(0);
+  tft.setTextSize(2);
+  tft.setTextColor(TFT_WHITE);
+
+  for (int i = 0; i < NPCmenuItemsCount; i++) {
+    if (i == NPCselectedItem) {
+      tft.setTextColor(TFT_RED);
+      tft.drawString(">", 10, 30 + i * 30);
+    } else {
+      tft.setTextColor(TFT_WHITE);
+    }
+    tft.drawString(NPCmenuItems[i], 30, 30 + i * 30);
+  }
 }
 
 void printTime() {

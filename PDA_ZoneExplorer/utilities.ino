@@ -18,7 +18,7 @@ void DoRandomVals() {
 
 void applyCard(int u_method) {
   if (u_method == 1) {
-    int check = MakeCardUsed(card.uid, 2);
+    int check = ChangeUsage(card.uid, 2, 0);
     if (check == 1) {
       doCard();
     } else if (check == 0) {
@@ -58,7 +58,12 @@ printdisplay(currPage);
 
 
 }
-
+void dump_byte_array(byte *buffer, byte bufferSize) {
+    for (byte i = 0; i < bufferSize; i++) {
+        Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+        Serial.print(buffer[i], HEX);
+    }
+}
 
 void CheckPlayersDeath() {
   WhatsTheReason();

@@ -9,7 +9,8 @@
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <Update.h>
-#include <Adafruit_PN532.h>
+#include <SPI.h>
+#include <MFRC522.h>
 
 
 #define DEBUG 1
@@ -21,8 +22,8 @@ const String VERS = "std 0.2.5";
 #define DebugWiFiPassword "viktor26"
 
 
-#define PN532_IRQ 19
-#define PN532_RESET 13
+#define SS_PIN 14
+#define RST_PIN 13
 #define MP3_RX_PIN 4               //GPIO4/D2 to DFPlayer Mini TX
 #define MP3_TX_PIN 5               //GPIO5/D1 to DFPlayer Mini RX
 #define MP3_SERIAL_SPEED 9600      //DFPlayer Mini suport only 9600-baud
@@ -60,7 +61,7 @@ uint64_t radiationcheck;
 
 const int DELAY_BETWEEN_CARDS = 1000;
 long timeLastCardRead = 0;
-bool readerDisabled = false;
+bool readerDisabled = true;
 int8_t currPage;
 int8_t prevcurrPage;
 int irqCurr;
@@ -114,7 +115,7 @@ Data data;
 
 struct DecodedCard {
   String card_text_str;
-  uint8_t uid[7] = { 0, 0, 0, 0, 0, 0, 0 };
+  byte uid[7] = { 0, 0, 0, 0, 0, 0, 0 };
   byte usage_method = 0;
   byte type = 0;
   byte subtype = 0;
@@ -140,6 +141,12 @@ MicroDS3231 rtc;
 SoftwareSerial mp3Serial;
 DFPlayer mp3;
 
+const int NPCmenuItemsCount = 5;
+String NPCmenuItems[NPCmenuItemsCount] = { "Поновити картку", "Вилікуватись", "Item 3", "Item 4", "Вийти" };
+int NPCselectedItem = 0;
+
+
+
 
 bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap) {
   if (y >= tft.height()) return 0;
@@ -157,10 +164,13 @@ bool update = 1;
 
 
 unsigned long lastScanTime = 0;
-const unsigned long scanInterval = 1000; // Интервал сканирования 5 секунд
+const unsigned long scanInterval = 1000;  // Интервал сканирования 5 секунд
 
 
-Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
+MFRC522 mfrc522(SS_PIN, RST_PIN);
+MFRC522::MIFARE_Key key;
+
+
 void setup() {
   Serial.begin(115200);
   pinMode(15, OUTPUT);
@@ -204,12 +214,8 @@ void setup() {
 
 
 
-  uint32_t versiondata = nfc.getFirmwareVersion();
-  if (! versiondata) {
-    Serial.print("Didn't find PN53x board");
-    while (1); // halt
-  }
-
+  SPI.begin();  // Инициализация SPI
+  mfrc522.PCD_Init();
 
 
 
@@ -222,6 +228,15 @@ void setup() {
   serialLog("=== Запуск системи (Build " + VERS + ") ===");
   SerialPrintTime();
   delay(50);
+
+  mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max);  // Установка усиления антенны
+  mfrc522.PCD_AntennaOff();                        // Перезагружаем антенну
+  mfrc522.PCD_AntennaOn();                         // Включаем антенну
+
+
+  for (byte i = 0; i < 6; i++) {
+    key.keyByte[i] = 0xFF;
+  }
 
 
 
@@ -237,8 +252,6 @@ void setup() {
   xTaskCreatePinnedToCore(core0, "Task0", 10000, NULL, 1, &Task0, 0);
   PrintMainPage(1);
   CheckPlayersDeath();
-  nfc.begin();
-  startListeningToNFC();
   printBattery();
   printTime();
 }
@@ -365,6 +378,50 @@ void loop() {
     }
   }
 
+
+  if (currPage == 6) {
+    if (up.click()) {
+      NPCselectedItem = (NPCselectedItem - 1 + NPCmenuItemsCount) % NPCmenuItemsCount;
+      drawMenuNPC();
+    }
+
+    if (down.click()) {
+      NPCselectedItem = (NPCselectedItem + 1) % NPCmenuItemsCount;
+      drawMenuNPC();
+    }
+
+    if (ok.click()) {
+      switch (NPCselectedItem) {
+        case 0:
+          if (ChangeUsage(card.uid, 1,1)) {
+            Serial.println("RESET GOOD");
+              tft.setTextSize(2);
+              tft.setTextColor(TFT_GOOD);
+              tft.setCursor(30, 200);
+              tft.print("Успішно");
+              delay(1000);
+              drawMenuNPC();
+          } else {
+              Serial.println("RESET ERR");
+              tft.setTextSize(2);
+              tft.setTextColor(TFT_RED);
+              tft.setCursor(30, 200);
+              tft.print("Помилка");
+              delay(1000);
+              drawMenuNPC();
+          }
+          break;
+        case 1: break;
+        case 4:
+        readerDisabled = true;
+          currPage = 0;
+          update = 1;
+          NPCselectedItem = 0;
+          break;
+      }
+    }
+  }
+
   if (millis() - radiationcheck > 1000 and currPage == 2) {
     radiationcheck = millis();
 
@@ -373,7 +430,10 @@ void loop() {
   }
 
 
-
+  if (left.hold()) {
+    currPage = 6;
+    update = 1;
+  }
 
 
   if (update == 1) {
@@ -381,5 +441,3 @@ void loop() {
     update = 0;
   }
 }
-
-
