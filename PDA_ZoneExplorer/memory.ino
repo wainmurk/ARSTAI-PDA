@@ -1,36 +1,66 @@
 void writeDefaultConfig() {
-  File file = LittleFS.open("/data.cfg", FILE_WRITE);
-  if (!file) {
-     Serial2Webln("Не взалося створити файл.");
-    return;
+  File file = LittleFS.open("/profile.cfg", FILE_WRITE);
+  if (file) {
+    file.println("ssid=" + String(data.ssid));
+    file.println("password=" + String(data.pass));
+    file.println("adminpass=" + String(data.adminpass));
+    file.println("health=" + String(data.health));
+    file.println("armor=" + String(data.armor));
+    file.println("radiation=" + String(data.radiation));
+    file.println("fire_protection=" + String(data.fire_protection));
+    file.println("gravi_protection=" + String(data.gravi_protection));
+    file.println("acid_protection=" + String(data.acid_protection));
+    file.println("electro_protection=" + String(data.electro_protection));
+    file.println("radiation_protection=" + String(data.radiation_protection));
+    file.println("psy_protection=" + String(data.psy_protection));
+    file.println("is_npc=" + String(data.is_npc));
+    file.println("is_adept=" + String(data.is_adept));
+    file.println("is_dead=" + String(data.is_dead));
+    file.println("is_zombie=" + String(data.is_zombie));
+    file.println("is_under_control=" + String(data.is_under_control));
+    file.println("is_nocked=" + String(data.is_nocked));
+    file.println("is_ignor=" + String(data.is_ignor));
+    file.close();
+    Serial2Webln("Файл профілю відсутній. Встановлено стандартні значення.");
+  } else {
+    Serial2Webln("Помилка у роботі файлової системи.");
   }
-
-  file.write((const uint8_t*)&data, sizeof(Data));
-  file.close();
-   Serial2Webln("Встановлено стандартні значення.");
 }
 
 
 void updateConfig() {
-  DateTime now = rtc.getTime();
-  File file = LittleFS.open("/data.cfg", FILE_WRITE);
-  if (!file) {
-     Serial2Webln("Не вдалося відкрити файл для запису.");
-    return;
+  File file = LittleFS.open("/profile.cfg", "w");
+  if (file) {
+    file.println("ssid=" + String(data.ssid));
+    file.println("password=" + String(data.pass));
+    file.println("adminpass=" + String(data.adminpass));
+    file.println("health=" + String(data.health));
+    file.println("armor=" + String(data.armor));
+    file.println("radiation=" + String(data.radiation));
+    file.println("fire_protection=" + String(data.fire_protection));
+    file.println("gravi_protection=" + String(data.gravi_protection));
+    file.println("acid_protection=" + String(data.acid_protection));
+    file.println("electro_protection=" + String(data.electro_protection));
+    file.println("radiation_protection=" + String(data.radiation_protection));
+    file.println("psy_protection=" + String(data.psy_protection));
+    file.println("is_npc=" + String(data.is_npc));
+    file.println("is_adept=" + String(data.is_adept));
+    file.println("is_dead=" + String(data.is_dead));
+    file.println("is_zombie=" + String(data.is_zombie));
+    file.println("is_under_control=" + String(data.is_under_control));
+    file.println("is_nocked=" + String(data.is_nocked));
+    file.println("is_ignor=" + String(data.is_ignor));
+    file.close();
+  } else {
+    Serial2Webln("Помилка у роботі файлової системи.");
   }
-  file.write((const uint8_t*)&data, sizeof(Data));
-  file.close();
 }
 
 void updateConfigNow() {
   DateTime now = rtc.getTime();
-  File file = LittleFS.open("/data.cfg", FILE_WRITE);
-  if (!file) {
-     Serial2Webln("Не вдалося відкрити файл для запису.");
-    return;
-  }else{
-  file.write((const uint8_t*)&data, sizeof(Data));
-  file.close();
+
+updateConfig();
+
   if (now.date <= 9) {  Serial2Web("0"); }
    Serial2Web(String(now.date));
    Serial2Web(".");
@@ -44,28 +74,82 @@ void updateConfigNow() {
    Serial2Web(String(now.minute));
    Serial2Webln(" Дані збережено.");
 }
-}
+
 
 
 
 
 void readConfig() {
-  File file = LittleFS.open("/data.cfg", FILE_READ);
-  if (!file) {
-     Serial2Webln("Не вдалося відкрити файл.");
-    return;
-  }
+  bool allValuesPresent = true;
 
-  file.read((uint8_t*)&data, sizeof(Data));
-  file.close();
-   Serial2Webln("Конфіг прочитано.");
-}
+  File file = LittleFS.open("/profile.cfg", "r");
+  if (file) {
+    String line;
+    while (file.available()) {
+      line = file.readStringUntil('\n');
+      line.trim(); // Удаляем пробелы в начале и конце строки
 
-void deleteConfigFile() {
-  if (LittleFS.remove("/data.cfg")) {
-     Serial2Webln("File '/data.cfg' deleted successfully");
+      int equalSignIndex = line.indexOf('=');
+      if (equalSignIndex == -1) continue; // Если нет знака '=', пропускаем строку
+
+      String key = line.substring(0, equalSignIndex);
+      String value = line.substring(equalSignIndex + 1);
+      value.trim(); // Удаляем пробелы после знака '='
+
+      if (key == "ssid") {
+        value.toCharArray(data.ssid, sizeof(data.ssid));
+      } else if (key == "password") {
+        value.toCharArray(data.pass, sizeof(data.pass));
+      } else if (key == "adminpass") {
+        value.toCharArray(data.adminpass, sizeof(data.adminpass));
+      } else if (key == "health") {
+        data.health = value.toFloat();
+      } else if (key == "armor") {
+        data.armor = value.toInt();
+      } else if (key == "radiation") {
+        data.radiation = value.toInt();
+      } else if (key == "fire_protection") {
+        data.fire_protection = value.toInt();
+      } else if (key == "gravi_protection") {
+        data.gravi_protection = value.toInt();
+      } else if (key == "acid_protection") {
+        data.acid_protection = value.toInt();
+      } else if (key == "electro_protection") {
+        data.electro_protection = value.toInt();
+      } else if (key == "radiation_protection") {
+        data.radiation_protection = value.toInt();
+      } else if (key == "psy_protection") {
+        data.psy_protection = value.toInt();
+      } else if (key == "is_npc") {
+        data.is_npc = value.toInt();
+      } else if (key == "is_adept") {
+        data.is_adept = value.toInt();
+      } else if (key == "is_dead") {
+        data.is_dead = value.toInt();
+      } else if (key == "is_zombie") {
+        data.is_zombie = value.toInt();
+      } else if (key == "is_under_control") {
+        data.is_under_control = value.toInt();
+      } else if (key == "is_nocked") {
+        data.is_nocked = value.toInt();
+      } else if (key == "is_ignor") {
+        data.is_ignor = value.toInt();
+      } else {
+        allValuesPresent = false;
+      }
+    }
+    file.close();
+
+    if (!allValuesPresent) {
+      Serial2Webln("Файл профілю неповний. Видалення файлу та створення нового.");
+      LittleFS.remove("/profile.cfg");
+      writeDefaultConfig();
+    } else {
+      Serial2Webln("Профіль прочитано успішно.");
+    }
   } else {
-     Serial2Webln("Failed to delete file '/data.cfg'");
+    Serial2Webln("Файл профілю відсутній. Створення нового файлу.");
+    writeDefaultConfig();
   }
 }
 

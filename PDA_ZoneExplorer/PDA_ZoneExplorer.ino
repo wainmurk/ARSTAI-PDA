@@ -181,7 +181,7 @@ void setup() {
     Serial.println("LittleFS initialisation failed!");
     while (1) yield();  // Stay here twiddling thumbs waiting
   }
-  if (!LittleFS.exists("/data.cfg")) {
+  if (!LittleFS.exists("/profile.cfg")) {
     writeDefaultConfig();
   }
   readConfig();
