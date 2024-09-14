@@ -35,8 +35,14 @@ void handleCommand(const String& command) {
     rescue();
   } else if (command == "restart") {
     ESP.restart();
+  } else if (command == "checkevents") {
+    CheckEvents(1);
   } else if (command.startsWith("stime ")) {
     setTimeCommand(command.substring(6));
+  } else if (command.startsWith("addevent ")) {
+    addEventCommand(command.substring(9));
+  } else if (command.startsWith("delevent ")) {
+    removeEventCommand(command.substring(9));
   } else if (command.startsWith("kill ")) {
     DoKill(command.substring(5));
   } else if (command == "time") {
@@ -55,7 +61,7 @@ void handleCommand(const String& command) {
     readFileContent(filename.c_str());
   } else if (command.startsWith("b ")) {
     String message = command.substring(2);
-    serialLog(message);
+    serialLogln(message);
   } else if (command.startsWith("del ")) {
     String filename = command.substring(4);  // Предполагается, что команда формата "del имя_файла"
     deleteFile("/" + filename);
@@ -73,7 +79,7 @@ void handleCommand(const String& command) {
 void getVariableValue(const String& variable) {
   if (variable == "uid") {
     dump_byte_array(card.uid, sizeof(card.uid));
-  }else if (variable == "usage_method") {
+  } else if (variable == "usage_method") {
     Serial2Webln(String(card.usage_method));
   } else if (variable == "type") {
     Serial2Webln(String(card.type));
@@ -278,7 +284,7 @@ void setVariableValue(const String& variable, const String& value) {
     Serial2Webln("Невідома змінна.");
   }
   SerialPrintTime();
-  serialLog(" Змінено " + variable + " на " + value);
+  serialLogln(" Змінено " + variable + " на " + value);
 }
 
 
@@ -296,7 +302,7 @@ void SerialPrintTime() {
   current_time += ":";
   if (now.minute <= 9) { current_time += "0"; }
   current_time += String(now.minute);
-  serialLog(current_time);
+  serialLogln(current_time);
 }
 
 void printHelp() {
@@ -304,18 +310,27 @@ void printHelp() {
   Serial2Webln("");
   Serial2Webln("c - очистити консоль (web).");
   Serial2Webln("b <текст>  - додати запис у лог.");
+  Serial2Webln("");
   Serial2Webln("get <змінна> - отримати значення змінної.");
   Serial2Webln("set <змінна> <значення> - встановити значення змінної.");
-  Serial2Webln("info - вивести дебаг-інформацію.");
+  Serial2Webln("info - вивести debug-інформацію.");
   Serial2Webln("save - зберегти конфігурацію.");
   Serial2Webln("restart - перезавантажити ESP.");
+  Serial2Webln("");
   Serial2Webln("time - вивести поточний час.");
   Serial2Webln("stime SEC MIN HOUR DAY MONTH YEAR - встановити час");
+  Serial2Webln("");
   Serial2Webln("alog - вивести назву актуального логу.");
   Serial2Webln("dlog - видалити всі логи.");
+  Serial2Webln("");
   Serial2Webln("files - показати список файлів в кореневому каталозі.");
   Serial2Webln("read <файл> - прочитати вміст файлу.");
   Serial2Webln("del <файл> - видалити файл.");
+  Serial2Webln("");
+  Serial2Webln("addevent ID Назва Година Хвилина День Місяць Рік Пов2г Пов1г Пов30хв Пов10хв Пов1хв - додати подію.");
+  Serial2Webln("Наприклад: addevent 1 Великий_Викид 14 30 25 12 2024 1 1 1 1 1");
+  Serial2Webln("delevent ID - видалити подію за вказаним ID.");
+  Serial2Webln("checkevents перевірити заплановані події.");
   Serial2Webln("");
 }
 
@@ -333,7 +348,39 @@ void DoKill(const String& cause) {
   causeOfDeath = cause;
   data.health = 0;
   data.is_dead = 1;
-  serialLog("Вбито по причині: " + cause);
+  serialLogln("Вбито по причині: " + cause);
   currPage = 9;
   printdisplay(currPage);
+}
+
+
+
+void addEventCommand(const String& params) {
+  int id;
+  char eventName[50];
+  int hour, min, date, month, year;
+  int notify2h, notify1h, notify30m, notify10m, notify1m;
+
+  // Проверка на корректное количество аргументов
+  int count = sscanf(params.c_str(), "%d %49s %d %d %d %d %d %d %d %d %d %d",
+                     &id, eventName, &hour, &min, &date, &month, &year,
+                     &notify2h, &notify1h, &notify30m, &notify10m, &notify1m);
+
+  if (count != 12) {
+   serialLogln("Помилка: Неправильна кількість аргументів. Очікується 12 аргументів, розділених пробілом.");
+    return;
+  }
+
+  addEvent(id, String(eventName), hour, min, date, month, year,
+           notify2h, notify1h, notify30m, notify10m, notify1m);
+}
+
+
+
+// Обработка команды удаления события
+void removeEventCommand(const String& params) {
+  int id;
+  sscanf(params.c_str(), "%d", &id);
+
+  removeEvent(id);
 }

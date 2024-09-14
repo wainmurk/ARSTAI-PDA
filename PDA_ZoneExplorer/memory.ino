@@ -237,6 +237,11 @@ void createNewLogFile() {
 }
 
 void serialLog(const String& message) {
+  Serial2Web(message);
+  writeLog(message.c_str());
+}
+
+void serialLogln(const String& message) {
   Serial2Webln(message);
   writeLog(message.c_str());
 }
@@ -298,7 +303,7 @@ if(String(filename) == "/images/armor.jpeg"){
   }
 
   if (LittleFS.remove(filename)) {
-    serialLog("Успішно видалено: " + filename);
+    serialLogln("Успішно видалено: " + filename);
   } else {
      Serial2Web("Сталася помилка. ");
      Serial2Web("(");
@@ -312,6 +317,99 @@ void clearLogs() {
   for (int i = 0; i < maxLogFiles; i++) {
     FileName = "/log/log" + String(i) + ".txt";
     deleteFile(FileName);
+  }
+}
+
+
+void createEmptyEventsConfig() {
+  File file = LittleFS.open("/events.cfg", "w");
+  if (file) {
+    file.close();
+    serialLogln("Порожній events.cfg створено.");
+  } else {
+    serialLogln("Помилка під час створення events.cfg.");
+  }
+}
+void addEvent(int id, String eventName, int hour, int min, int date, int month, int year,
+              int notify2h, int notify1h, int notify30m, int notify10m, int notify1m) {
+  
+  // Проверка валидности времени и даты
+  if (hour < 0 || hour > 23 || min < 0 || min > 59 || date < 1 || date > 31 || 
+      month < 1 || month > 12 || year < 2000) {
+    Serial2Webln("Помилка: Невірна дата або час.");
+    return;
+  }
+
+  // Проверка валидности значений уведомлений
+  if ((notify2h != 0 && notify2h != 1) || (notify1h != 0 && notify1h != 1) ||
+      (notify30m != 0 && notify30m != 1) || (notify10m != 0 && notify10m != 1) ||
+      (notify1m != 0 && notify1m != 1)) {
+    Serial2Webln("Помилка: Значення notify повинні бути 0 або 1.");
+    return;
+  }
+
+  // Проверка на существование события с таким же id
+  File file = LittleFS.open("/events.cfg", "r");
+  if (file) {
+    while (file.available()) {
+      String line = file.readStringUntil('\n');
+      int existingId;
+      sscanf(line.c_str(), "%d", &existingId);
+      if (existingId == id) {
+        Serial2Webln("Помилка: Подія з таким ID вже існує.");
+        file.close();
+        return;
+      }
+    }
+    file.close();
+  } else {
+    Serial2Webln("Помилка під час відкриття файлу events.cfg для перевірки.");
+    return;
+  }
+
+  // Добавление события с параметрами уведомления
+  file = LittleFS.open("/events.cfg", "a");
+  if (file) {
+    file.printf("%d %s %d %d %d %d %d %d %d %d %d %d\n", 
+                id, eventName.c_str(), hour, min, date, month, year, 
+                notify2h, notify1h, notify30m, notify10m, notify1m);
+    file.close();
+    serialLogln("Подія додана: " + eventName);
+  } else {
+    serialLogln("Помилка під час додавання події.");
+  }
+}
+
+// Функция для удаления события из файла по ID
+void removeEvent(int id) {
+  File file = LittleFS.open("/events.cfg", "r");
+  File tempFile = LittleFS.open("/temp.cfg", "w");
+  bool found = false;
+
+  if (file && tempFile) {
+    while (file.available()) {
+      String line = file.readStringUntil('\n');
+      // Проверка, начинается ли строка с ID события
+      if (!line.startsWith(String(id) + " ")) {
+        tempFile.println(line);
+      } else {
+        found = true;
+      }
+    }
+    file.close();
+    tempFile.close();
+
+    // Заменяем оригинальный файл на временный
+    LittleFS.remove("/events.cfg");
+    LittleFS.rename("/temp.cfg", "/events.cfg");
+
+    if (found) {
+      serialLogln("Подія видалена: ID " + String(id));
+    } else {
+      Serial2Webln("Подію не знайдено: ID " + String(id));
+    }
+  } else {
+    serialLogln("Помилка під час видалення події.");
   }
 }
 

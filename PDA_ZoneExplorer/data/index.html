@@ -13,7 +13,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start; /* Изменено с center на flex-start */
       height: 100vh;
     }
     .container {
@@ -67,7 +67,7 @@
       margin-top: 20px;
       width: 100%;
       max-width: 1300px;
-      height: calc(100vh - 320px);
+      height: calc(100vh - 420px); /* Уменьшено для учета новой секции */
       overflow-y: auto;
       white-space: pre-wrap;
       margin-bottom: 20px;
@@ -115,6 +115,10 @@
         <input type="text" id="command" placeholder="Введіть команду" autocapitalize="none">
         <button class="button" onclick="sendCommand()">Відправити</button>
       </div>
+    </div>
+    <div class="card">
+      <h2>Швидкі команди</h2>
+      <button class="button" onclick="syncTime()">Синхр. час</button>
     </div>
     <div class="file-actions">
       <div class="card">
@@ -166,6 +170,33 @@
         sendCommand();
       }
     });
+
+function syncTime() {
+  const now = new Date();
+  const seconds = now.getSeconds();
+  const minutes = now.getMinutes();
+  const hours = now.getHours();
+  const day = now.getDate();
+  const month = now.getMonth() + 1; // Месяцы начинаются с 0
+  const year = now.getFullYear();
+
+  const command = `stime ${seconds} ${minutes} ${hours} ${day} ${month} ${year}`;
+
+  // Отправляем команду на сервер
+  fetch("/console", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: "command=" + encodeURIComponent(command)
+  })
+  .then(response => response.text())
+  .then(data => {
+    console.log(data);
+    updateConsole(); // Обновляем консоль после отправки команды
+  });
+}
+
 
     // Функция для закидывания файла
     function uploadFile() {

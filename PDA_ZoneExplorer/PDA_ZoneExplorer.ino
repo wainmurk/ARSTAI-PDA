@@ -11,12 +11,13 @@
 #include <Update.h>
 #include <SPI.h>
 #include <MFRC522.h>
+#include <RadioLib.h>
 
 
 #define DEBUG 1
 bool WEB = 1;
 
-const String VERS = "std 0.2.5";
+const String VERS = "dev 0.3.0";
 
 #define DebugWiFiSSID "Lebben"
 #define DebugWiFiPassword "viktor26"
@@ -136,16 +137,21 @@ Button down(36);
 Button left(34);
 Button right(39);
 
+
+#if defined(ESP8266) || defined(ESP32)
+  ICACHE_RAM_ATTR
+#endif
+
 TFT_eSPI tft = TFT_eSPI();
 
 MicroDS3231 rtc;
 SoftwareSerial mp3Serial;
 DFPlayer mp3;
-
+SX1278 radio = new Module(2, 12, 27, 26);
 const int NPCmenuItemsCount = 5;
 String NPCmenuItems[NPCmenuItemsCount] = { "Поновити картку", "Вилікуватись", "Item 3", "Item 4", "Вийти" };
 int NPCselectedItem = 0;
-
+volatile bool receivedFlag = false;
 
 
 
@@ -173,83 +179,11 @@ MFRC522::MIFARE_Key key;
 
 
 void setup() {
-  Serial.begin(115200);
-  pinMode(15, OUTPUT);
-  digitalWrite(15, 1);
-
-  if (!LittleFS.begin(false)) {
-    Serial.println("LittleFS initialisation failed!");
-    while (1) yield();  // Stay here twiddling thumbs waiting
-  }
-  if (!LittleFS.exists("/profile.cfg")) {
-    writeDefaultConfig();
-  }
-  readConfig();
-  delay(50);
-
-  // Load the current log index from a file
-  loadLogIndex();
-  delay(50);
-  // Create a new log file for the current session
-  createNewLogFile();
-  delay(50);
-
-  mp3Serial.begin(MP3_SERIAL_SPEED, SWSERIAL_8N1, MP3_RX_PIN, MP3_TX_PIN, false, MP3_SERIAL_BUFFER_SIZE, 0);  //false=signal not inverted, 0=ISR/RX buffer size (shared with serial TX buffer)
-
-  mp3.begin(mp3Serial, MP3_SERIAL_TIMEOUT, DFPLAYER_MINI, false);  //"DFMINI" see NOTE, false=no response from module after the command
-
-  mp3.stop();  //if player was runing during ESP8266 reboot
-
-  mp3.reset();  //reset all setting to default
-
-  mp3.setSource(2);  //1=USB-Disk, 2=TF-Card, 3=Aux, 4=Sleep, 5=NOR Flash
-
-  mp3.setEQ(0);       //0=Off, 1=Pop, 2=Rock, 3=Jazz, 4=Classic, 5=Bass
-  mp3.setVolume(30);  //0..30, module persists volume on power failure
-
-  mp3.sleep();  //inter sleep mode, 24mA
-
-  mp3.wakeup(2);  //exit sleep mode & initialize source 1=USB-Disk, 2=TF-Card, 3=Aux, 5=NOR Flash
-
-  mp3Serial.enableRx(true);  //enable interrupts on RX-pin for better response detection, less overhead than mp3Serial.listen()
-
-
-
-  SPI.begin();  // Инициализация SPI
-  mfrc522.PCD_Init();
-
-
-
-  if (mp3.getStatus()) serialLog("Помилка у роботі mp3.");
-
-  mp3Serial.enableRx(false);  //disable interrupts on RX-pin, less overhead than mp3Serial.listen()
-  if (rtc.lostPower()) {      // выполнится при сбросе батарейки
-    rtc.setTime(BUILD_SEC, BUILD_MIN, BUILD_HOUR, BUILD_DAY, BUILD_MONTH, BUILD_YEAR);
-  }
-  serialLog("=== Запуск системи (Build " + VERS + ") ===");
-  SerialPrintTime();
-  delay(50);
-
-  mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max);  // Установка усиления антенны
-  mfrc522.PCD_AntennaOff();                        // Перезагружаем антенну
-  mfrc522.PCD_AntennaOn();                         // Включаем антенну
-
-
-  for (byte i = 0; i < 6; i++) {
-    key.keyByte[i] = 0xFF;
-  }
-
-
-
-  tft.init();
-  tft.setRotation(3);
-  tft.fillScreen(TFT_BG);
-  TJpgDec.setSwapBytes(true);
-  TJpgDec.setCallback(tft_output);
+  Init();
   TJpgDec.drawFsJpg(0, 0, "/images/logo.jpeg", LittleFS);
   delay(2000);
   TJpgDec.drawFsJpg(0, 0, "/images/bg.jpeg", LittleFS);
-  mp3.playTrack(1);
+  //mp3.playTrack(1);
   xTaskCreatePinnedToCore(core0, "Task0", 10000, NULL, 1, &Task0, 0);
   PrintMainPage(1);
   CheckPlayersDeath();
@@ -340,6 +274,7 @@ void loop() {
 
 
   if (now.minute != prev_min and now.minute != 165) {
+    CheckEvents(0);
     cleardisplay(1);
     printTime();
     prev_min = now.minute;

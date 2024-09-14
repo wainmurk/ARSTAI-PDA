@@ -31,7 +31,7 @@ void setupWebServer() {
       if (!isAuthenticated) {
         isAuthenticated = true;
         SerialPrintTime();
-        serialLog("Доступ надано автоматично. (WiFi)");
+        serialLogln("Доступ надано автоматично. (WiFi)");
       }
       handleCommand(command);
     } else {
@@ -136,12 +136,13 @@ void Serial2Webln(const String &message) {
   }
 }
 
+void setFlag(void) {
+  // we got a packet, set the flag
+  receivedFlag = true;
+}
 
 void core0(void *p) {
-
-  if(WEB)StartWebServer();else startWiFiScan();
-
-
+StartWebServer();
   for (;;) {
 
 
@@ -168,20 +169,53 @@ void core0(void *p) {
 
 
 
+  if(receivedFlag) {
+    // reset flag
+    receivedFlag = false;
 
-    if (!WEB) {
+    // you can read received data as an Arduino String
+    String str;
+    int state = radio.readData(str);
 
-      int16_t WiFiScanStatus = WiFi.scanComplete();
-      if (WiFiScanStatus < 0) {  // it is busy scanning or got an error
-        if (WiFiScanStatus == WIFI_SCAN_FAILED) {
-          Serial.println("WiFi Scan has failed. Starting again.");
-          startWiFiScan();
-        }
-      } else {
-        printScannedNetworks(WiFiScanStatus);
-        startWiFiScan();
-      }
+    // you can also read received data as byte array
+    /*
+      byte byteArr[8];
+      int numBytes = radio.getPacketLength();
+      int state = radio.readData(byteArr, numBytes);
+    */
+
+    if (state == RADIOLIB_ERR_NONE) {
+      Serial.print(F("[Radio] Дані:\t\t"));
+      Serial.println(str);
+
+      // print RSSI (Received Signal Strength Indicator)
+      Serial.print(F("[Radio] RSSI:\t\t"));
+      Serial.print(radio.getRSSI());
+      Serial.println(F(" dBm"));
+
+    } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
+      // packet was received, but is malformed
+      Serial.println(F("[Radio] Помилка пакету!"));
+
+    } else {
+      // some other error occurred
+      Serial.print(F("[Radio] Сталась помилка, код "));
+      Serial.println(state);
+
     }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
     vTaskDelay(5);
   }
 }
@@ -193,16 +227,16 @@ void StartWebServer() {
   WiFi.begin(DebugWiFiSSID, DebugWiFiPassword);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
-    Serial.println("Connecting to WiFi...");
+    Serial.println("Під'єднання до WiFi ...");
   }
 
-  Serial.print("WiFi connected, IP address: ");
+  Serial.print("Під'єднано, IP адреса: ");
   Serial.println(WiFi.localIP());
 #else
 
   WiFi.softAP(data.ssid, data.pass);
 
-  Serial.print("AP IP address: ");
+  Serial.print("AP IP адреса: ");
   Serial.println(WiFi.softAPIP());
 #endif
   setupWebServer();
@@ -296,8 +330,8 @@ void handleCardDetected() {
     if (yes == 4) {
         String card_data_str;
         SerialPrintTime();
-        serialLog("Відскановано: ");
-        serialLog(card.card_text_str);
+        serialLog("Знайдено картку: ");
+        serialLogln(card.card_text_str);
         for (uint8_t i = 0; i < 16; i++) {
             card_data_str += String(card_data[i]);
             if (i != 15) { card_data_str += ", "; }
@@ -307,10 +341,11 @@ void handleCardDetected() {
             if (i != mfrc522.uid.size - 1) { card_uid_str += " "; }
         }
         decodecard(card_data);
-        serialLog(card_data_str);
-        serialLog("");
-        serialLog(card_uid_str);
-        serialLog("");
+        serialLog("Дані: ");
+        serialLogln(card_data_str);
+        serialLog("ID: ");
+        serialLogln(card_uid_str);
+        serialLogln("");
         cardreturntimer = millis();
         currPage = 6;
         update = 1;
@@ -388,29 +423,13 @@ int ChangeUsage(uint8_t *targetUID, uint8_t newValue, bool bypass) {
         }
     } else {
         // Античит: выводим сообщение о попытке обхода
-        serialLog("=========[ANTICHEAT]=========");
+        serialLogln("✘=========[ANTICHEAT]=========✘");
         SerialPrintTime();
-        serialLog("Виявлена спроба обходу системи карток.");
-        serialLog("=========");
+        serialLogln("Виявлена спроба обходу системи карток.");
+        serialLogln("=========");
+        serialLogln("");
     }
     return 0;
 }
 
 
-
-
-
-void startWiFiScan() {
-  Serial.println("Scan start");
-  WiFi.scanNetworks(true);  // 'true' turns Async Mode ON
-}
-
-void printScannedNetworks(uint16_t networksFound) {
-  if (networksFound == 0) {
-    Serial.println("no networks found");
-  } else {
-    Serial.println("\nScan done");
-  }
-  Serial.println("");
-  WiFi.scanDelete();
-}

@@ -42,7 +42,7 @@ void printdisplay(int page) {
     }
     if (!isWarning and !isAlarm) {
       tft.setTextColor(TFT_GOOD);
-      tft.print("Чисто.");
+      tft.print("Норма.");
     }
     tft.setTextColor(TFT_TEXT);
     tft.setCursor(12, 180);
