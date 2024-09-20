@@ -358,22 +358,23 @@ void DoKill(const String& cause) {
 void addEventCommand(const String& params) {
   int id;
   char eventName[50];
-  int hour, min, date, month, year;
+  int hour, min, date, month, year, duration;
   int notify2h, notify1h, notify30m, notify10m, notify1m;
 
   // Проверка на корректное количество аргументов
-  int count = sscanf(params.c_str(), "%d %49s %d %d %d %d %d %d %d %d %d %d",
-                     &id, eventName, &hour, &min, &date, &month, &year,
+  int count = sscanf(params.c_str(), "%d %49s %d %d %d %d %d %d %d %d %d %d %d",
+                     &id, eventName, &hour, &min, &date, &month, &year, &duration,
                      &notify2h, &notify1h, &notify30m, &notify10m, &notify1m);
 
-  if (count != 12) {
-   serialLogln("Помилка: Неправильна кількість аргументів. Очікується 12 аргументів, розділених пробілом.");
+  if (count != 13) {
+   serialLogln("Помилка: Неправильна кількість аргументів. Очікується 13 аргументів, розділених пробілом.");
     return;
   }
 
-  addEvent(id, String(eventName), hour, min, date, month, year,
+  addEvent(id, String(eventName), hour, min, date, month, year, duration,
            notify2h, notify1h, notify30m, notify10m, notify1m);
 }
+
 
 
 

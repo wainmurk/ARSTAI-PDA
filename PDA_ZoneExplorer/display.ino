@@ -182,10 +182,12 @@ cleardisplay(0);
     tft.setCursor(12, 90);
     tft.print("Не забирайте картку!");
     delay(3000);
-    currPage = 4;
+    currPage = 0;
     printdisplay(currPage);
   } else if (page == 4) {
    drawMenuNPC();
+  } else if (page == 80) {
+   drawMenuMaster();
   } else if (page == 99) {
     cleardisplay(0);
     tft.setCursor(14, 40);
@@ -195,6 +197,8 @@ cleardisplay(0);
     delay(2000);
     currPage = 0;
     printdisplay(currPage);
+  } else if (page == 50) {
+
   }
   tft.setTextSize(1);
   tft.setTextColor(TFT_TEXT);
@@ -215,6 +219,31 @@ void drawMenuNPC() {
     }
     tft.drawString(NPCmenuItems[i], 30, 30 + i * 30);
   }
+}
+
+void drawMenuMaster() {
+  cleardisplay(0);
+  tft.setTextSize(2);
+  tft.setTextColor(TFT_WHITE);
+
+  int menuHeight = 230; // Высота области меню
+  int itemHeight = 30;  // Высота одного элемента меню
+  int firstVisibleItem = max(0, MasterselectedItem - (menuHeight / itemHeight / 2));
+  int lastVisibleItem = min(MastermenuItemsCount - 1, firstVisibleItem + (menuHeight / itemHeight - 1));
+  int yOffset = 30; // Начальная позиция по Y для первого элемента
+
+  // Отображение видимых элементов меню
+  for (int i = firstVisibleItem; i <= lastVisibleItem; i++) {
+    if (i == MasterselectedItem) {
+      tft.setTextColor(TFT_RED);
+      tft.drawString(">", 10, yOffset);
+    } else {
+      tft.setTextColor(TFT_WHITE);
+    }
+    tft.drawString(MastermenuItems[i], 30, yOffset);
+    yOffset += itemHeight;
+  }
+  tft.setTextColor(TFT_WHITE);
 }
 
 void printTime() {
@@ -300,6 +329,33 @@ String WhatPercent(int pro) {
   }
 
   return output;
+}
+
+
+void CautionDisplay(String text, int min){
+
+    cleardisplay(0);
+    tft.setCursor(80, 40);
+    tft.setTextSize(4);
+    tft.setTextColor(TFT_RED);
+    tft.print("Увага!");
+    tft.setTextColor(TFT_WHITE);
+    tft.setTextSize(3);
+    tft.setCursor(40, 80);
+    tft.print("Наближається");
+    tft.setCursor(20, 120);
+    tft.print(text);
+    tft.setCursor(100, 160);
+    tft.print("через");
+    tft.setCursor(60, 200);
+    tft.print(min);
+    tft.print(" ");
+    tft.print("хвилин");
+
+    delay(5000);
+    printdisplay(currPage);
+
+
 }
 
 

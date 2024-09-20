@@ -70,6 +70,8 @@ int irqPrev;
 
 bool globalUpdate;
 
+bool in_shelter = 0;
+
 bool isAnomaly;
 bool isRadiation;
 bool isArtefact;
@@ -151,6 +153,13 @@ SX1278 radio = new Module(2, 12, 27, 26);
 const int NPCmenuItemsCount = 5;
 String NPCmenuItems[NPCmenuItemsCount] = { "Поновити картку", "Вилікуватись", "Item 3", "Item 4", "Вийти" };
 int NPCselectedItem = 0;
+
+const int MastermenuItemsCount = 11;
+String MastermenuItems[MastermenuItemsCount] = { "Тест1", "Тест1", "Item 2", "Item 3", "Exit 4" , "Item 5", "Item 6", "Item 7", "Item 8", "Item 9", "Item 10"};
+int MasterselectedItem = 0;
+
+
+
 volatile bool receivedFlag = false;
 
 
@@ -183,7 +192,6 @@ void setup() {
   TJpgDec.drawFsJpg(0, 0, "/images/logo.jpeg", LittleFS);
   delay(2000);
   TJpgDec.drawFsJpg(0, 0, "/images/bg.jpeg", LittleFS);
-  //mp3.playTrack(1);
   xTaskCreatePinnedToCore(core0, "Task0", 10000, NULL, 1, &Task0, 0);
   PrintMainPage(1);
   CheckPlayersDeath();
@@ -194,7 +202,6 @@ void setup() {
 
 
 void loop() {
-
 
   ok.tick();
   up.tick();
@@ -224,6 +231,7 @@ void loop() {
 
   if (millis() - globaldoeffects > 60000) {
     globaldoeffects = millis();
+
 
     if (!data.is_dead) {
       if (data.radiation >= 1000 and data.radiation < 100000) {
@@ -312,7 +320,7 @@ void loop() {
         applyCard(card.usage_method);
       }
       selectedButton = 1;
-      currPage = (data.is_dead) ?  9 : 0;
+      currPage = (data.is_dead) ?  9 : currPage;
       update = 1;
       printTime();
     }
@@ -354,6 +362,59 @@ void loop() {
       }
     }
   }
+
+  if (currPage == 80) {
+  if (up.click()) {
+    MasterselectedItem = (MasterselectedItem - 1 + MastermenuItemsCount) % MastermenuItemsCount;
+    drawMenuMaster();
+  }
+
+  if (down.click()) {
+    MasterselectedItem = (MasterselectedItem + 1) % MastermenuItemsCount;
+    drawMenuMaster();
+  }
+
+
+
+   if (ok.click()) {
+      switch (MasterselectedItem) {
+        case 0:
+          if (ChangeUsage(card.uid, 1,1)) {
+              tft.setTextSize(2);
+              tft.setTextColor(TFT_GOOD);
+              tft.setCursor(30, 200);
+              tft.print("Успішно");
+              delay(500);
+              drawMenuNPC();
+          } else {
+              tft.setTextSize(2);
+              tft.setTextColor(TFT_RED);
+              tft.setCursor(30, 200);
+              tft.print("Помилка");
+              delay(500);
+              drawMenuNPC();
+          }
+          break;
+        case 1: rescue();break;
+        case 4: currPage = 0; update = 1;break;
+      }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+
+
 
   if (millis() - radiationcheck > 1000 and currPage == 2) {
     radiationcheck = millis();

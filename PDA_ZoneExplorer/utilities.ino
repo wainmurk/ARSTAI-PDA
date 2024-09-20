@@ -38,6 +38,12 @@ if(card.type == 0){
 
 }else if(card.type == 0){
 
+}else if(card.type == 10){
+  ok.tick();
+  MasterselectedItem=0;
+currPage = 80;
+printdisplay(currPage);
+update = 1;
 }
 }
 
@@ -56,11 +62,12 @@ void CheckEvents(int var) {
             int id;
             char eventName[50];
             int eventHour, eventMin, eventDate, eventMonth, eventYear;
+            int duration; // Новое поле длительности события
             int notify2h, notify1h, notify30m, notify10m, notify1m;
 
-            sscanf(line.c_str(), "%d %49s %d %d %d %d %d %d %d %d %d %d", 
+            sscanf(line.c_str(), "%d %49s %d %d %d %d %d %d %d %d %d %d %d", 
                    &id, eventName, &eventHour, &eventMin, &eventDate, &eventMonth, 
-                   &eventYear, &notify2h, &notify1h, &notify30m, &notify10m, &notify1m);
+                   &eventYear, &duration, &notify2h, &notify1h, &notify30m, &notify10m, &notify1m);
 
             // Получение текущих времени и даты
             int currentMin = now.minute; 
@@ -71,6 +78,9 @@ void CheckEvents(int var) {
 
             // Расчет оставшегося времени до события в минутах
             int minutesDiff = calculateMinutesDiff(eventMin, eventHour, eventDate, eventMonth, eventYear);
+            int eventStartMinutes = eventHour * 60 + eventMin;
+            int eventEndMinutes = eventStartMinutes + duration;
+            int currentMinutes = currentHour * 60 + currentMin;
 
             eventsFound = true;
 
@@ -80,20 +90,40 @@ void CheckEvents(int var) {
 
             // Проверка, наступило ли время уведомления
             if (var == 0) {
-                if ((minutesDiff == 120 && notify2h) ||
-                    (minutesDiff == 60 && notify1h) ||
-                    (minutesDiff == 30 && notify30m) ||
-                    (minutesDiff == 10 && notify10m) ||
-                    (minutesDiff == 1 && notify1m) ||
-                    (minutesDiff == 0)) {
+                 if (minutesDiff == 120 && notify2h) {
+                    mp3.playTrack(1);
+                    CautionDisplay(String(eventName), minutesDiff);
 
-                    serialLogln("Подія ID: " + String(id) + " (" + String(eventName) + ") настане через " + String(minutesDiff) + " хвилин.");
-                }
+                 } else if (minutesDiff == 60 && notify1h) {
+                    mp3.playTrack(2);
+                    CautionDisplay(String(eventName), minutesDiff);
+
+                 } else if (minutesDiff == 30 && notify30m) {
+                    mp3.playTrack(3);
+                    CautionDisplay(String(eventName), minutesDiff);
+
+                 } else if (minutesDiff == 10 && notify10m) {
+                    mp3.playTrack(4);
+                    CautionDisplay(String(eventName), minutesDiff);
+
+                 } else if (minutesDiff == 1 && notify1m) {
+                    mp3.playTrack(5);
+                    CautionDisplay(String(eventName), minutesDiff);
+
+                 } else if (minutesDiff == 0) {
+                    serialLogln("Подія ID: " + String(id) + " (" + String(eventName) + ") починається зараз.");
+                 }
             }
 
-            // Если событие не наступило, записываем его во временный файл
-            if (minutesDiff > 0) {
+            // Если событие не наступило или не завершилось, записываем его во временный файл
+            if (currentMinutes < eventEndMinutes) {
                 tempFile.println(line);
+
+                // Проверяем, активен ли сейчас ивент и выполняем код каждую минуту
+                if (currentMinutes >= eventStartMinutes && currentMinutes < eventEndMinutes) {
+                    executeEventCode(id, eventName); // Выполняем нужный код
+                }
+
             } else {
                 serialLogln("Подія ID: " + String(id) + " (" + String(eventName) + ") відбулася і була видалена.");
             }
@@ -114,6 +144,18 @@ void CheckEvents(int var) {
         serialLogln("Помилка під час відкриття файлу events.cfg.");
     }
 }
+
+// Эта функция будет вызвана каждую минуту для каждого активного события
+void executeEventCode(int id, const char* eventName) {
+  
+    serialLogln("Виконання події ID: " + String(id) + " (" + String(eventName) + ")");
+    if(!data.is_dead and !in_shelter){
+    data.health -= 51;
+    causeOfDeath = eventName;
+    }
+}
+
+
 
 
 

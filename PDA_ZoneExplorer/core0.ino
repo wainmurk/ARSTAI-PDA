@@ -157,7 +157,7 @@ StartWebServer();
 
 
 
-      if (currPage != 6 and currPage != 4) {
+      if (currPage != 6 and currPage != 4 and currPage != 80) {
         if (readerDisabled) {
           if (millis() - timeLastCardRead > DELAY_BETWEEN_CARDS) {
             timeLastCardRead = millis();

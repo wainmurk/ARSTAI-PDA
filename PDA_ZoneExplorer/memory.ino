@@ -330,13 +330,13 @@ void createEmptyEventsConfig() {
     serialLogln("Помилка під час створення events.cfg.");
   }
 }
-void addEvent(int id, String eventName, int hour, int min, int date, int month, int year,
-              int notify2h, int notify1h, int notify30m, int notify10m, int notify1m) {
+void addEvent(int id, String eventName, int hour, int min, int date, int month, int year, 
+              int duration, int notify2h, int notify1h, int notify30m, int notify10m, int notify1m) {
   
-  // Проверка валидности времени и даты
+  // Проверка валидности времени, даты и продолжительности
   if (hour < 0 || hour > 23 || min < 0 || min > 59 || date < 1 || date > 31 || 
-      month < 1 || month > 12 || year < 2000) {
-    Serial2Webln("Помилка: Невірна дата або час.");
+      month < 1 || month > 12 || year < 2000 || duration < 1 || duration > 240) {
+    Serial2Webln("Помилка: Невірна дата, час або тривалість (1-240 хв).");
     return;
   }
 
@@ -370,8 +370,8 @@ void addEvent(int id, String eventName, int hour, int min, int date, int month, 
   // Добавление события с параметрами уведомления
   file = LittleFS.open("/events.cfg", "a");
   if (file) {
-    file.printf("%d %s %d %d %d %d %d %d %d %d %d %d\n", 
-                id, eventName.c_str(), hour, min, date, month, year, 
+    file.printf("%d %s %d %d %d %d %d %d %d %d %d %d %d\n", 
+                id, eventName.c_str(), hour, min, date, month, year, duration, 
                 notify2h, notify1h, notify30m, notify10m, notify1m);
     file.close();
     serialLogln("Подія додана: " + eventName);
@@ -379,6 +379,7 @@ void addEvent(int id, String eventName, int hour, int min, int date, int month, 
     serialLogln("Помилка під час додавання події.");
   }
 }
+
 
 // Функция для удаления события из файла по ID
 void removeEvent(int id) {
