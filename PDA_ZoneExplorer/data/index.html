@@ -13,7 +13,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start; /* Изменено с center на flex-start */
+      justify-content: flex-start;
       height: 100vh;
     }
     .container {
@@ -47,7 +47,7 @@
       margin: 4px 2px;
       cursor: pointer;
       transition: background-color 0.3s;
-      font-weight: bold; /* Жирный шрифт для кнопок */
+      font-weight: bold;
     }
     .button:hover {
       background-color: #3700b3;
@@ -67,7 +67,7 @@
       margin-top: 20px;
       width: 100%;
       max-width: 1300px;
-      height: calc(100vh - 420px); /* Уменьшено для учета новой секции */
+      height: calc(100vh - 420px);
       overflow-y: auto;
       white-space: pre-wrap;
       margin-bottom: 20px;
@@ -95,13 +95,12 @@
       flex: 1;
       margin-right: 10px;
     }
-    /* Медиа запросы для адаптивности */
     @media screen and (max-width: 768px) {
       h2 {
-        font-size: 24px; /* Уменьшаем размер заголовка на мобильных устройствах */
+        font-size: 24px;
       }
       .console {
-        max-width: 100%; /* Растягиваем консоль на всю ширину на мобильных устройствах */
+        max-width: 100%;
       }
     }
   </style>
@@ -145,10 +144,22 @@
     </div>
   </div>
   <script>
+    let commandHistory = [];
+    let historyIndex = -1;
+
     function sendCommand() {
       const commandInput = document.getElementById("command");
       const command = commandInput.value.trim();
+
       if (command !== "") {
+        if (commandHistory[commandHistory.length - 1] !== command) {
+          commandHistory.push(command);
+          if (commandHistory.length > 10) {
+            commandHistory.shift();
+          }
+        }
+        historyIndex = commandHistory.length;
+
         fetch("/console", {
           method: "POST",
           headers: {
@@ -159,46 +170,57 @@
         .then(response => response.text())
         .then(data => {
           console.log(data);
-          updateConsole(); // Обновление консоли после отправки команды
+          updateConsole();
         });
-        commandInput.value = ''; // Очистка поля ввода после отправки команды
+
+        commandInput.value = ''; 
       }
     }
 
-    document.getElementById("command").addEventListener("keyup", function(event) {
+    document.getElementById("command").addEventListener("keydown", function(event) {
       if (event.key === "Enter") {
         sendCommand();
+      } else if (event.key === "ArrowUp") {
+        if (historyIndex > 0) {
+          historyIndex--;
+          document.getElementById("command").value = commandHistory[historyIndex];
+        }
+      } else if (event.key === "ArrowDown") {
+        if (historyIndex < commandHistory.length - 1) {
+          historyIndex++;
+          document.getElementById("command").value = commandHistory[historyIndex];
+        } else {
+          document.getElementById("command").value = '';
+          historyIndex = commandHistory.length;
+        }
       }
     });
 
-function syncTime() {
-  const now = new Date();
-  const seconds = now.getSeconds();
-  const minutes = now.getMinutes();
-  const hours = now.getHours();
-  const day = now.getDate();
-  const month = now.getMonth() + 1; // Месяцы начинаются с 0
-  const year = now.getFullYear();
+    function syncTime() {
+      const now = new Date();
+      const seconds = now.getSeconds();
+      const minutes = now.getMinutes();
+      const hours = now.getHours();
+      const day = now.getDate();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
 
-  const command = `stime ${seconds} ${minutes} ${hours} ${day} ${month} ${year}`;
+      const command = `stime ${seconds} ${minutes} ${hours} ${day} ${month} ${year}`;
 
-  // Отправляем команду на сервер
-  fetch("/console", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
-    },
-    body: "command=" + encodeURIComponent(command)
-  })
-  .then(response => response.text())
-  .then(data => {
-    console.log(data);
-    updateConsole(); // Обновляем консоль после отправки команды
-  });
-}
+      fetch("/console", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "command=" + encodeURIComponent(command)
+      })
+      .then(response => response.text())
+      .then(data => {
+        console.log(data);
+        updateConsole();
+      });
+    }
 
-
-    // Функция для закидывания файла
     function uploadFile() {
       const fileInput = document.getElementById("fileInput");
       if (fileInput.files.length > 0) {
@@ -221,22 +243,19 @@ function syncTime() {
       const filenameInput = document.getElementById("filename");
       const filename = filenameInput.value.trim();
 
-      // Список запрещённых имен файлов
       const forbiddenFiles = ["radiation.jpeg", "logo.jpeg", "index.html", "health.jpeg", "bg.jpeg"];
 
       if (filename !== "") {
-        // Проверка, содержится ли запрещённое имя файла в запросе
         if (forbiddenFiles.some(forbiddenFile => filename.includes(forbiddenFile))) {
           alert("Захищений файл. Завантаження заборонено.");
-          filenameInput.value = ''; // Очистка поля ввода после вывода предупреждения
+          filenameInput.value = '';
         } else {
           window.location.href = "/download?file=" + "/" + encodeURIComponent(filename);
-          filenameInput.value = ''; // Очистка поля ввода после отправки команды
+          filenameInput.value = '';
         }
       }
     }
 
-    // Функция для обновления консоли
     function updateConsole() {
       fetch("/consoleOutput")
         .then(response => response.text())
@@ -250,10 +269,8 @@ function syncTime() {
         });
     }
 
-    // Обновление консоли каждую секунду
     setInterval(updateConsole, 1000);
 
-    // Функция для загрузки прошивки
     function uploadFirmware() {
       const firmwareInput = document.getElementById("firmwareInput");
       if (firmwareInput.files.length > 0) {
@@ -267,7 +284,6 @@ function syncTime() {
         .then(response => response.text())
         .then(data => {
           console.log(data);
-          alert(data); // Выводим сообщение об успехе или ошибке
         });
       }
     }

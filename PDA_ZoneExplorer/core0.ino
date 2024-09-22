@@ -33,6 +33,7 @@ void setupWebServer() {
         SerialPrintTime();
         serialLogln("Доступ надано автоматично. (WiFi)");
       }
+      if(command == "l")command = "wl";
       handleCommand(command);
     } else {
       request->send(400, "text/plain; charset=utf-8", "Відсутній параметр.");
@@ -185,22 +186,23 @@ StartWebServer();
     */
 
     if (state == RADIOLIB_ERR_NONE) {
-      Serial.print(F("[Radio] Дані:\t\t"));
-      Serial.println(str);
+      serialLog("[Radio] Дані:\t");
+      serialLogln(str);
 
       // print RSSI (Received Signal Strength Indicator)
-      Serial.print(F("[Radio] RSSI:\t\t"));
-      Serial.print(radio.getRSSI());
-      Serial.println(F(" dBm"));
+      serialLog("[Radio] RSSI:\t");
+      serialLog(String(radio.getRSSI()));
+      serialLogln(" dBm");
+      parseRadioPacket(str, radio.getRSSI());
 
     } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
       // packet was received, but is malformed
-      Serial.println(F("[Radio] Помилка пакету!"));
+      serialLogln("[Radio] Помилка пакету!");
 
     } else {
       // some other error occurred
-      Serial.print(F("[Radio] Сталась помилка, код "));
-      Serial.println(state);
+      serialLog("[Radio] Сталась помилка, код ");
+      serialLogln(String(state));
 
     }
   }

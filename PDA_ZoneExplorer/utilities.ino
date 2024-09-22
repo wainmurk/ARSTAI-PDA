@@ -112,6 +112,7 @@ void CheckEvents(int var) {
 
                  } else if (minutesDiff == 0) {
                     serialLogln("Подія ID: " + String(id) + " (" + String(eventName) + ") починається зараз.");
+                    mp3.playTrack(6);
                  }
             }
 
@@ -126,6 +127,7 @@ void CheckEvents(int var) {
 
             } else {
                 serialLogln("Подія ID: " + String(id) + " (" + String(eventName) + ") відбулася і була видалена.");
+                mp3.playTrack(7);
             }
         }
 
@@ -230,12 +232,22 @@ void rescue() {
   update = 1;
 }
 
-
 void WhatsTheReason() {
   if (data.radiation >= 1000) {
     causeOfDeath = "Радіація";
   }
 }
+
+void lock(int type){
+        isAuthenticated = false;
+        SerialPrintTime();
+        if(type == 0){
+        serialLogln("Сессію завершено. (UART)");
+        }else {
+        serialLogln("Сессію завершено. (WiFi)");
+        }
+}
+
 
 
 void Init(){
@@ -290,7 +302,6 @@ void Init(){
 
   if (mp3.getStatus()) serialLogln("[MP3] Сталась помилка ініціалізації.");else serialLogln("[MP3] Ініціалізація ... Успішно!");
 
-  mp3Serial.enableRx(false);
   if (rtc.lostPower()) {
     rtc.setTime(BUILD_SEC, BUILD_MIN, BUILD_HOUR, BUILD_DAY, BUILD_MONTH, BUILD_YEAR);
   }

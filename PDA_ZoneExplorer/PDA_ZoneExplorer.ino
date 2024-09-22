@@ -57,6 +57,8 @@ uint64_t checktimetimer;
 uint64_t cardreturntimer;
 uint64_t globalcheckplayerstats;
 uint64_t globaldoeffects;
+unsigned long lastShelterTestTime = 0;
+unsigned long lastRadiationTime = 0;
 uint64_t radiationcheck;
 
 
@@ -227,6 +229,16 @@ void loop() {
       }
     }
   }
+
+    if (in_shelter && (millis() - lastShelterTestTime > 20000)) {
+        in_shelter = false;
+        Serial.println("Не было сигнала от укрытия в течение 20 секунд. Статус: не в укрытии.");
+    }
+
+        if (currentsievert > 0 && (millis() - lastRadiationTime > 5000)) {
+        currentsievert = 0;
+    }
+
 
 
   if (millis() - globaldoeffects > 60000) {

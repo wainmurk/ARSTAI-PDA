@@ -29,16 +29,23 @@ void handleCommand(const String& command) {
     }
   } else if (command == "info") {
     debugVars();
+  } else if (command == "l") {
+    lock(0);
+  } else if (command == "wl") {
+    lock(1);
   } else if (command == "save") {
     updateConfigNow();
   } else if (command == "revive") {
     rescue();
   } else if (command == "restart") {
     ESP.restart();
-  } else if (command == "checkevents") {
+  } else if (command == "events") {
     CheckEvents(1);
   } else if (command.startsWith("stime ")) {
     setTimeCommand(command.substring(6));
+  } else if (command.startsWith("playsound ")) {
+    String number = command.substring(10);
+    mp3.playTrack(number.toInt());
   } else if (command.startsWith("addevent ")) {
     addEventCommand(command.substring(9));
   } else if (command.startsWith("delevent ")) {
@@ -310,6 +317,7 @@ void printHelp() {
   Serial2Webln("");
   Serial2Webln("c - очистити консоль (web).");
   Serial2Webln("b <текст>  - додати запис у лог.");
+  Serial2Webln("l - завершити сессію та деавторизуватись.");
   Serial2Webln("");
   Serial2Webln("get <змінна> - отримати значення змінної.");
   Serial2Webln("set <змінна> <значення> - встановити значення змінної.");
@@ -330,7 +338,7 @@ void printHelp() {
   Serial2Webln("addevent ID Назва Година Хвилина День Місяць Рік Пов2г Пов1г Пов30хв Пов10хв Пов1хв - додати подію.");
   Serial2Webln("Наприклад: addevent 1 Великий_Викид 14 30 25 12 2024 1 1 1 1 1");
   Serial2Webln("delevent ID - видалити подію за вказаним ID.");
-  Serial2Webln("checkevents перевірити заплановані події.");
+  Serial2Webln("events перевірити заплановані події.");
   Serial2Webln("");
 }
 
