@@ -59,6 +59,7 @@ uint64_t globalcheckplayerstats;
 uint64_t globaldoeffects;
 unsigned long lastShelterTestTime = 0;
 unsigned long lastRadiationTime = 0;
+unsigned long lastMineExplodeTime = 0;
 uint64_t radiationcheck;
 
 
@@ -100,6 +101,8 @@ struct Data {
   float health = 100;
   int armor = 0;
   uint32_t radiation = 0;
+  int group = 0;
+
 
   int fire_protection = 0;
   int gravi_protection = 0;
@@ -134,6 +137,13 @@ struct DecodedCard {
   byte hours = 0;
 };
 DecodedCard card;
+
+struct Settings {
+byte gameCode = 88;
+
+};
+Settings s;
+
 
 Button ok(0);
 Button up(35);
@@ -175,7 +185,7 @@ bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap) 
 
 TaskHandle_t Task0;
 
-
+int dx, dy;
 
 bool update = 1;
 
@@ -212,7 +222,6 @@ void loop() {
   right.tick();
 
   DateTime now = rtc.getTime();
-
 
 
   if (millis() - globalcheckplayerstats > 1000) {

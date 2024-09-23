@@ -22,6 +22,11 @@ void printdisplay(int page) {
     cleardisplay(0);
     TJpgDec.drawFsJpg(18, 38, "/images/health.jpeg", LittleFS);
     drawProgressBar(58, 44, 228, 16, data.health, TFT_TEXT, TFT_HEALTH);
+    tft.setTextColor(TFT_GOOD);
+    tft.setTextSize(2);
+    tft.setCursor(294, 48);
+    tft.print("^");
+    tft.setTextColor(TFT_TEXT);
     TJpgDec.drawFsJpg(18, 76, "/images/armor.jpeg", LittleFS);
     drawProgressBar(58, 84, 228, 16, data.armor, TFT_TEXT, TFT_ARMOR);
     TJpgDec.drawFsJpg(18, 115, "/images/radiation.jpeg", LittleFS);

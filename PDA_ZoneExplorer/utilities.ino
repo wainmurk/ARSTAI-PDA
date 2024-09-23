@@ -147,6 +147,11 @@ void CheckEvents(int var) {
     }
 }
 
+int genRandom(int minValue, int maxValue) {
+  uint32_t randomValue = esp_random(); // Получаем аппаратное случайное число
+  return minValue + (randomValue % (maxValue - minValue + 1)); // Приводим к диапазону
+}
+
 // Эта функция будет вызвана каждую минуту для каждого активного события
 void executeEventCode(int id, const char* eventName) {
   

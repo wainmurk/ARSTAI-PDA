@@ -225,7 +225,19 @@ void setVariableValue(const String& variable, const String& value) {
     card.usage_method = value.toInt();
   } else if (variable == "type") {
     card.type = value.toInt();
-  } else if (variable == "subtype") {
+  }
+
+   else if (variable == "x") {
+    dx = value.toInt();
+    printdisplay(currPage);
+
+  }
+   else if (variable == "y") {
+    dy = value.toInt();
+    printdisplay(currPage);
+  }
+  
+   else if (variable == "subtype") {
     card.subtype = value.toInt();
   } else if (variable == "protection_type") {
     card.protection_type = value.toInt();
