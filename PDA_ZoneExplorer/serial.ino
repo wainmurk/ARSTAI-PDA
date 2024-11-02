@@ -29,9 +29,9 @@ void handleCommand(const String& command) {
     }
   } else if (command == "info") {
     debugVars();
-  } else if (command == "l") {
+  } else if (command == "q") {
     lock(0);
-  } else if (command == "wl") {
+  } else if (command == "wq") {
     lock(1);
   } else if (command == "save") {
     updateConfigNow();
@@ -118,6 +118,8 @@ void getVariableValue(const String& variable) {
     Serial2Webln(String(data.armor));
   } else if (variable == "radiation") {
     Serial2Webln(String(data.radiation));
+  }  else if (variable == "group") {
+    Serial2Webln(String(data.group));
   } else if (variable == "fire_protection") {
     Serial2Webln(String(data.fire_protection));
   } else if (variable == "gravi_protection") {
@@ -138,8 +140,8 @@ void getVariableValue(const String& variable) {
     Serial2Webln(String(data.is_zombie));
   } else if (variable == "is_under_control") {
     Serial2Webln(String(data.is_under_control));
-  } else if (variable == "is_nocked") {
-    Serial2Webln(String(data.is_nocked));
+  } else if (variable == "is_knocked") {
+    Serial2Webln(String(data.is_knocked));
   } else if (variable == "is_ignor") {
     Serial2Webln(String(data.is_ignor));
   } else if (variable == "is_npc") {
@@ -190,6 +192,8 @@ void debugVars() {
   Serial2Webln(String(data.armor));
   Serial2Web("radiation: ");
   Serial2Webln(String(data.radiation));
+  Serial2Web("group: ");
+  Serial2Webln(String(data.group));
   Serial2Web("fire_protection: ");
   Serial2Webln(String(data.fire_protection));
   Serial2Web("gravi_protection: ");
@@ -210,8 +214,8 @@ void debugVars() {
   Serial2Webln(String(data.is_zombie));
   Serial2Web("is_under_control: ");
   Serial2Webln(String(data.is_under_control));
-  Serial2Web("is_nocked: ");
-  Serial2Webln(String(data.is_nocked));
+  Serial2Web("is_knocked: ");
+  Serial2Webln(String(data.is_knocked));
   Serial2Web("is_ignor: ");
   Serial2Webln(String(data.is_ignor));
   Serial2Web("is_npc: ");
@@ -253,6 +257,8 @@ void setVariableValue(const String& variable, const String& value) {
     card.minutes = value.toInt();
   } else if (variable == "hours") {
     card.hours = value.toInt();
+  }  else if (variable == "group") {
+    data.group = value.toInt();
   } else if (variable == "ssid") {
     strncpy(data.ssid, value.c_str(), sizeof(data.ssid));
   } else if (variable == "pass") {
@@ -293,8 +299,8 @@ void setVariableValue(const String& variable, const String& value) {
     data.is_zombie = value.toInt();
   } else if (variable == "is_under_control") {
     data.is_under_control = value.toInt();
-  } else if (variable == "is_nocked") {
-    data.is_nocked = value.toInt();
+  } else if (variable == "is_knocked") {
+    data.is_knocked = value.toInt();
   } else if (variable == "is_ignor") {
     data.is_ignor = value.toInt();
   } else if (variable == "is_npc") {
@@ -329,7 +335,7 @@ void printHelp() {
   Serial2Webln("");
   Serial2Webln("c - очистити консоль (web).");
   Serial2Webln("b <текст>  - додати запис у лог.");
-  Serial2Webln("l - завершити сессію та деавторизуватись.");
+  Serial2Webln("q - завершити сессію та деавторизуватись.");
   Serial2Webln("");
   Serial2Webln("get <змінна> - отримати значення змінної.");
   Serial2Webln("set <змінна> <значення> - встановити значення змінної.");

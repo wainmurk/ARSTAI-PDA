@@ -50,6 +50,7 @@ String causeOfDeath;
 
 bool response = 0;
 bool selectedButton = 1;
+bool selectedknockButton = 1;
 
 
 uint64_t updatetime;
@@ -71,6 +72,17 @@ int8_t prevcurrPage;
 int irqCurr;
 int irqPrev;
 
+int secondsRemaining;
+
+
+bool timerStarted = false;
+int targetSeconds = 0;                     // Сколько секунд нужно ждать
+unsigned long lastPrintTime = 0;           // Время последнего вывода
+const unsigned long printInterval = 1000;  // Интервал вывода каждые 5 секунд
+
+int startSec, startMin, startHour, startDate, startMonth, startYear;
+
+
 bool globalUpdate;
 
 bool in_shelter = 0;
@@ -88,7 +100,7 @@ float prev_health = -1;
 int prev_armor = -1;
 int prev_radiation = -1;
 int prev_min;
-
+int prev_page = -1;
 
 uint8_t card_data[16];
 //uint8_t card_text[48];
@@ -116,7 +128,7 @@ struct Data {
   bool is_dead = 0;
   bool is_zombie = 0;
   bool is_under_control = 0;
-  bool is_nocked = 0;
+  bool is_knocked = 0;
   bool is_ignor = 0;
 };
 
@@ -139,8 +151,8 @@ struct DecodedCard {
 DecodedCard card;
 
 struct Settings {
-byte gameCode = 88;
-
+  byte gameCode = 88;
+  int knocked_time = 180; 
 };
 Settings s;
 
@@ -153,7 +165,7 @@ Button right(39);
 
 
 #if defined(ESP8266) || defined(ESP32)
-  ICACHE_RAM_ATTR
+ICACHE_RAM_ATTR
 #endif
 
 TFT_eSPI tft = TFT_eSPI();
@@ -167,7 +179,7 @@ String NPCmenuItems[NPCmenuItemsCount] = { "Поновити картку", "В�
 int NPCselectedItem = 0;
 
 const int MastermenuItemsCount = 11;
-String MastermenuItems[MastermenuItemsCount] = { "Тест1", "Тест1", "Item 2", "Item 3", "Exit 4" , "Item 5", "Item 6", "Item 7", "Item 8", "Item 9", "Item 10"};
+String MastermenuItems[MastermenuItemsCount] = { "Вийти", "Вилікуватись", "Item 2", "Item 3", "Exit 4", "Item 5", "Item 6", "Item 7", "Item 8", "Item 9", "Item 10" };
 int MasterselectedItem = 0;
 
 
@@ -205,15 +217,17 @@ void setup() {
   delay(2000);
   TJpgDec.drawFsJpg(0, 0, "/images/bg.jpeg", LittleFS);
   xTaskCreatePinnedToCore(core0, "Task0", 10000, NULL, 1, &Task0, 0);
-  PrintMainPage(1);
   CheckPlayersDeath();
   printBattery();
   printTime();
-
 }
 
 
 void loop() {
+
+
+
+
 
   ok.tick();
   up.tick();
@@ -221,7 +235,26 @@ void loop() {
   left.tick();
   right.tick();
 
-  DateTime now = rtc.getTime();
+DateTime now = rtc.getTime();
+
+ 
+DisplayInteractiveNow(currPage);
+
+
+
+  if (currPage == 0 and down.click()) {
+
+    currPage = 10;
+    update = 1;
+  }
+
+
+  if (currPage == 50) {
+    if(ok.click()){timerStarted = 0; data.is_knocked = 0; currPage = 0; update = 1;}
+    if (millis() - globalcheckplayerstats > 1000) {
+      printdisplay(50);
+    }
+  }
 
 
   if (millis() - globalcheckplayerstats > 1000) {
@@ -239,14 +272,14 @@ void loop() {
     }
   }
 
-    if (in_shelter && (millis() - lastShelterTestTime > 20000)) {
-        in_shelter = false;
-        Serial.println("Не было сигнала от укрытия в течение 20 секунд. Статус: не в укрытии.");
-    }
+  if (in_shelter && (millis() - lastShelterTestTime > 20000)) {
+    in_shelter = false;
+    Serial.println("Не было сигнала от укрытия в течение 20 секунд. Статус: не в укрытии.");
+  }
 
-        if (currentsievert > 0 && (millis() - lastRadiationTime > 5000)) {
-        currentsievert = 0;
-    }
+  if (currentsievert > 0 && (millis() - lastRadiationTime > 5000)) {
+    currentsievert = 0;
+  }
 
 
 
@@ -265,7 +298,6 @@ void loop() {
       if (data.health < 0) data.health = 0;
     }
   }
-
 
 
   if (data.health != prev_health and currPage == 0) {
@@ -310,23 +342,24 @@ void loop() {
     updateConfig();
   }
 
+if(ok.hold() and data.is_npc and currPage == 0){
+  currPage = 4;
+  update = 1;
+}
 
 
-
-  if (currPage < (4 + data.is_npc)) {
+  if (currPage < 4) {
     if (left.click()) {
       currPage--;
-      if (currPage < 0) currPage = (3 + data.is_npc);
+      if (currPage < 0) currPage = 3;
       update = 1;
     }
     if (right.click()) {
       currPage++;
-      if (currPage > (3 + data.is_npc)) currPage = 0;
+      if (currPage > 3) currPage = 0;
       update = 1;
     }
   }
-
-
 
   if (currPage == 6) {
 
@@ -341,7 +374,36 @@ void loop() {
         applyCard(card.usage_method);
       }
       selectedButton = 1;
-      currPage = (data.is_dead) ?  9 : currPage;
+      if (data.is_dead)currPage = 9;
+      else if (data.is_knocked)currPage = 50;
+      else currPage = 0;
+      cleardisplay(0);
+      update = 1;
+      printTime();
+    }
+  }
+
+
+  if (currPage == 10) {
+
+    if (left.click() or right.click()) {
+      selectedknockButton = !selectedknockButton;
+      printdisplay(10);
+    }
+
+    if (ok.click()) {
+      response = selectedknockButton;
+      if (response) {
+        ok.tick();
+        data.is_knocked = 1;
+        currPage = 50;
+        cleardisplay(0);
+        printdisplay(50);
+        startTimer(s.knocked_time);
+      } else {
+        currPage = (data.is_dead) ? 9 : 0;
+      }
+      selectedknockButton = 1;
       update = 1;
       printTime();
     }
@@ -362,78 +424,28 @@ void loop() {
     if (ok.click()) {
       switch (NPCselectedItem) {
         case 0:
-          if (ChangeUsage(card.uid, 1,1)) {
-              tft.setTextSize(2);
-              tft.setTextColor(TFT_GOOD);
-              tft.setCursor(30, 200);
-              tft.print("Успішно");
-              delay(500);
-              drawMenuNPC();
+          if (ChangeUsage(card.uid, 1, 1)) {
+            tft.setTextSize(2);
+            tft.setTextColor(TFT_GOOD);
+            tft.setCursor(30, 200);
+            tft.print("Успішно");
+            delay(500);
+            drawMenuNPC();
           } else {
-              tft.setTextSize(2);
-              tft.setTextColor(TFT_RED);
-              tft.setCursor(30, 200);
-              tft.print("Помилка");
-              delay(500);
-              drawMenuNPC();
+            tft.setTextSize(2);
+            tft.setTextColor(TFT_RED);
+            tft.setCursor(30, 200);
+            tft.print("Помилка");
+            delay(500);
+            drawMenuNPC();
           }
           break;
-        case 1: rescue();break;
-        case 4: break;
+        case 1: rescue(); break;
+        case 4: currPage = 0; update = 1; break;
       }
     }
   }
 
-  if (currPage == 80) {
-  if (up.click()) {
-    MasterselectedItem = (MasterselectedItem - 1 + MastermenuItemsCount) % MastermenuItemsCount;
-    drawMenuMaster();
-  }
-
-  if (down.click()) {
-    MasterselectedItem = (MasterselectedItem + 1) % MastermenuItemsCount;
-    drawMenuMaster();
-  }
-
-
-
-   if (ok.click()) {
-      switch (MasterselectedItem) {
-        case 0:
-          if (ChangeUsage(card.uid, 1,1)) {
-              tft.setTextSize(2);
-              tft.setTextColor(TFT_GOOD);
-              tft.setCursor(30, 200);
-              tft.print("Успішно");
-              delay(500);
-              drawMenuNPC();
-          } else {
-              tft.setTextSize(2);
-              tft.setTextColor(TFT_RED);
-              tft.setCursor(30, 200);
-              tft.print("Помилка");
-              delay(500);
-              drawMenuNPC();
-          }
-          break;
-        case 1: rescue();break;
-        case 4: currPage = 0; update = 1;break;
-      }
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-  }
 
 
 
@@ -450,4 +462,5 @@ void loop() {
     printdisplay(currPage);
     update = 0;
   }
+
 }

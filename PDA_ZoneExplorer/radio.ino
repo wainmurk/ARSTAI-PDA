@@ -41,10 +41,12 @@ void parseRadioPacket(const String& input, int rssi) {
     if (groupsexcept == 0 or groupsexcept != data.group) {
       if (groupsonly == 0 or groupsonly == data.group) {
 
-        if (type == 15 and in_shelter == false) {
+        if (type == 15) {
           lastShelterTestTime = millis();
-          in_shelter = true;
-          Serial.println("Получен сигнал от укрытия. Статус: в укрытии.");
+          if (in_shelter == false) {
+            in_shelter = true;
+            Serial.println("Получен сигнал от укрытия. Статус: в укрытии.");
+          }
         }
 
 
@@ -57,10 +59,6 @@ void parseRadioPacket(const String& input, int rssi) {
         if (type == 6) {
           mineExplode(name, rssiActivation, rssi, value);
         }
-
-
-
-
       }
     }
   }

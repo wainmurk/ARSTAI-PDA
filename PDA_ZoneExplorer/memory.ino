@@ -18,7 +18,7 @@ void writeDefaultConfig() {
     file.println("is_dead=" + String(data.is_dead));
     file.println("is_zombie=" + String(data.is_zombie));
     file.println("is_under_control=" + String(data.is_under_control));
-    file.println("is_nocked=" + String(data.is_nocked));
+    file.println("is_knocked=" + String(data.is_knocked));
     file.println("is_ignor=" + String(data.is_ignor));
     file.close();
     Serial2Webln("Файл профілю відсутній. Встановлено стандартні значення.");
@@ -48,7 +48,7 @@ void updateConfig() {
     file.println("is_dead=" + String(data.is_dead));
     file.println("is_zombie=" + String(data.is_zombie));
     file.println("is_under_control=" + String(data.is_under_control));
-    file.println("is_nocked=" + String(data.is_nocked));
+    file.println("is_knocked=" + String(data.is_knocked));
     file.println("is_ignor=" + String(data.is_ignor));
     file.close();
   } else {
@@ -130,8 +130,8 @@ void readConfig() {
         data.is_zombie = value.toInt();
       } else if (key == "is_under_control") {
         data.is_under_control = value.toInt();
-      } else if (key == "is_nocked") {
-        data.is_nocked = value.toInt();
+      } else if (key == "is_knocked") {
+        data.is_knocked = value.toInt();
       } else if (key == "is_ignor") {
         data.is_ignor = value.toInt();
       } else {
