@@ -37,7 +37,7 @@ void handleCommand(const String& command) {
     updateConfigNow();
   } else if (command == "revive") {
     rescue();
-  } else if (command == "restart") {
+  } else if (command == "reboot") {
     ESP.restart();
   } else if (command == "events") {
     CheckEvents(1);
@@ -118,7 +118,7 @@ void getVariableValue(const String& variable) {
     Serial2Webln(String(data.armor));
   } else if (variable == "radiation") {
     Serial2Webln(String(data.radiation));
-  }  else if (variable == "group") {
+  } else if (variable == "group") {
     Serial2Webln(String(data.group));
   } else if (variable == "fire_protection") {
     Serial2Webln(String(data.fire_protection));
@@ -231,17 +231,16 @@ void setVariableValue(const String& variable, const String& value) {
     card.type = value.toInt();
   }
 
-   else if (variable == "x") {
+  else if (variable == "x") {
     dx = value.toInt();
     printdisplay(currPage);
 
-  }
-   else if (variable == "y") {
+  } else if (variable == "y") {
     dy = value.toInt();
     printdisplay(currPage);
   }
-  
-   else if (variable == "subtype") {
+
+  else if (variable == "subtype") {
     card.subtype = value.toInt();
   } else if (variable == "protection_type") {
     card.protection_type = value.toInt();
@@ -257,7 +256,7 @@ void setVariableValue(const String& variable, const String& value) {
     card.minutes = value.toInt();
   } else if (variable == "hours") {
     card.hours = value.toInt();
-  }  else if (variable == "group") {
+  } else if (variable == "group") {
     data.group = value.toInt();
   } else if (variable == "ssid") {
     strncpy(data.ssid, value.c_str(), sizeof(data.ssid));
@@ -341,7 +340,7 @@ void printHelp() {
   Serial2Webln("set <змінна> <значення> - встановити значення змінної.");
   Serial2Webln("info - вивести debug-інформацію.");
   Serial2Webln("save - зберегти конфігурацію.");
-  Serial2Webln("restart - перезавантажити ESP.");
+  Serial2Webln("reboot - перезавантажити ESP.");
   Serial2Webln("");
   Serial2Webln("time - вивести поточний час.");
   Serial2Webln("stime SEC MIN HOUR DAY MONTH YEAR - встановити час");
@@ -353,8 +352,8 @@ void printHelp() {
   Serial2Webln("read <файл> - прочитати вміст файлу.");
   Serial2Webln("del <файл> - видалити файл.");
   Serial2Webln("");
-  Serial2Webln("addevent ID Назва Година Хвилина День Місяць Рік Пов2г Пов1г Пов30хв Пов10хв Пов1хв - додати подію.");
-  Serial2Webln("Наприклад: addevent 1 Великий_Викид 14 30 25 12 2024 1 1 1 1 1");
+  Serial2Webln("addevent ID Назва Година Хвилина День Місяць Рік Тривалість(хв) Пов2г Пов1г Пов30хв Пов10хв Пов1хв - додати подію.");
+  Serial2Webln("Наприклад: addevent 1 Великий_Викид 14 30 25 12 2024 30 1 1 1 1 1");
   Serial2Webln("delevent ID - видалити подію за вказаним ID.");
   Serial2Webln("events перевірити заплановані події.");
   Serial2Webln("");
@@ -393,7 +392,7 @@ void addEventCommand(const String& params) {
                      &notify2h, &notify1h, &notify30m, &notify10m, &notify1m);
 
   if (count != 13) {
-   serialLogln("Помилка: Неправильна кількість аргументів. Очікується 13 аргументів, розділених пробілом.");
+    serialLogln("Помилка: Неправильна кількість аргументів. Очікується 13 аргументів, розділених пробілом.");
     return;
   }
 

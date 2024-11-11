@@ -12,8 +12,12 @@ void cleardisplay(int var) {
   } else if (var == 5) {
     tft.fillRect(272, 0, 45, 15, TFT_BG);
   } else if (var == 6) {
-    tft.fillRect(35, 135, 65, 40, TFT_BG);
-  } 
+    tft.fillRect(35, 135, 140, 40, TFT_BG);
+  } else if (var == 7) {
+    tft.fillRect(10, 152, 220, 16, TFT_BG);
+  } else if (var == 8) {
+    tft.fillRect(10, 205, 300, 16, TFT_BG);
+  }
 }
 
 void printdisplay(int page) {
@@ -39,21 +43,45 @@ void printdisplay(int page) {
     tft.print(" мЗв");
     tft.setCursor(12, 154);
     tft.print("Рад.фон: ");
-    if (isWarning and !isAlarm) {
+
+    if (currentsievert < 100) {
+      tft.setTextColor(TFT_GOOD);
+      tft.print("норма.");
+    } else if (currentsievert >= 100 and currentsievert < 10000) {
       tft.setTextColor(TFT_WARNING);
       tft.print("Увага!");
-    }
-    if (isAlarm) {
+    } else if (currentsievert >= 10000) {
       tft.setTextColor(TFT_ALARM);
       tft.print("Тревога!");
     }
-    if (!isWarning and !isAlarm) {
-      tft.setTextColor(TFT_GOOD);
-      tft.print("Норма.");
-    }
+
     tft.setTextColor(TFT_TEXT);
     tft.setCursor(12, 180);
-    tft.print("Аномалії: ");
+    tft.print("Стан здоров'я: ");
+    tft.setCursor(12, 205);
+    String health;
+
+    if (data.is_zombie) {
+      tft.setTextColor(TFT_ALARM);
+      health = "зомбований.";
+    } else if (data.radiation >= 1000 and data.radiation < 100000 ) {
+      tft.setTextColor(TFT_WARNING);
+      health = "легке опромінення.";
+    } else if (data.radiation >= 100000 and data.radiation < 200000) {
+      tft.setTextColor(TFT_ALARM);
+      health = "сильне опромінення.";
+    } else if (data.radiation >= 200000) {
+      tft.setTextColor(TFT_ALARM);
+      health = "тяжке опромінення.";
+    } else {
+      tft.setTextColor(TFT_GOOD);
+      health = "норма.";
+    }
+  
+
+tft.print(health);
+
+    tft.setTextColor(TFT_TEXT);
   } else if (page == 1) {
     cleardisplay(0);
     tft.setTextSize(3);
@@ -75,21 +103,30 @@ void printdisplay(int page) {
 
 
     tft.setCursor(120, 60);
-    tft.print(WhatPercent(data.fire_protection));
+    tft.print(data.fire_protection);
+    tft.print("%");
     tft.setCursor(120, 80);
-    tft.print(WhatPercent(data.gravi_protection));
+    tft.print(data.gravi_protection);
+    tft.print("%");
     tft.setCursor(120, 100);
-    tft.print(WhatPercent(data.acid_protection));
+    tft.print(data.acid_protection);
+    tft.print("%");
     tft.setCursor(120, 120);
-    tft.print(WhatPercent(data.electro_protection));
+    tft.print(data.electro_protection);
+    tft.print("%");
     tft.setCursor(120, 140);
-    tft.print(WhatPercent(data.radiation_protection));
+    tft.print(data.radiation_protection);
+    tft.print("%");
     tft.setCursor(120, 160);
-    tft.print(WhatPercent(data.psy_protection));
+    tft.print(data.psy_protection);
+    tft.print("%");
     tft.setCursor(13, 190);
     if (in_shelter) {
       tft.setTextColor(TFT_GOOD);
       tft.print("Ви в укритті");
+    } else if (medical_protection) {
+      tft.setTextColor(TFT_GOOD);
+      tft.print("Ви маєте захист");
     } else {
       tft.setTextColor(TFT_WARNING);
       tft.print("Ви поза укриттям");
@@ -102,14 +139,16 @@ void printdisplay(int page) {
     if (currentsievert < 100) tft.setTextColor(TFT_TEXT);
     else if (currentsievert >= 100 and currentsievert < 10000) tft.setTextColor(TFT_WARNING);
     else if (currentsievert >= 10000) tft.setTextColor(TFT_ALARM);
-    tft.setTextSize(6);
+    if (currentsievert > 10000) tft.setTextSize(5);
+    else if (currentsievert > 100000) tft.setTextSize(4);
+    else tft.setTextSize(6);
     centerText(currentsievert);
 
 
 
     tft.setTextSize(3);
     tft.setTextColor(TFT_TEXT);
-    tft.setCursor(125, 180);
+    tft.setCursor(120, 180);
     tft.print("мЗв/c");
 
 
@@ -127,6 +166,18 @@ void printdisplay(int page) {
 
   } else if (page == 3) {
     cleardisplay(0);
+    tft.setCursor(12, 25);
+    tft.setTextSize(2);
+    tft.print("Аномалії:");
+
+
+
+tft.setCursor(12, 130);
+tft.print("Артефакти:");
+
+
+
+
   }
 
   else if (page == 9) {
@@ -136,7 +187,7 @@ void printdisplay(int page) {
     tft.setTextColor(TFT_ALARM);
     tft.print("Помер");
     tft.setTextColor(TFT_TEXT);
-    tft.setCursor(100, 160);
+    tft.setCursor(20, 160);
     tft.setTextSize(2);
     tft.print("Причина:");
     tft.setCursor(20, 200);
@@ -182,10 +233,11 @@ void printdisplay(int page) {
       drawButtons();
     } else {
       delay(1000);
-      if (data.is_dead)currPage = 9;
-      else if (data.is_knocked)currPage = 50;
-      else if(currPage == 80)currPage = 80;
-      else currPage = 0;
+      fixDisplay();
+      // if (data.is_dead) currPage = 9;
+      // else if (data.is_knocked) currPage = 50;
+      // else if (currPage == 80) currPage = 80;
+      // else currPage = 0;
       cleardisplay(0);
       printdisplay(currPage);
     }
@@ -200,10 +252,8 @@ void printdisplay(int page) {
     tft.setCursor(12, 90);
     tft.print("Не забирайте картку!");
     delay(3000);
-      if (data.is_dead)currPage = 9;
-      else if (data.is_knocked)currPage = 50;
-      else currPage = 0;
-      cleardisplay(0);
+    fixDisplay();
+    cleardisplay(0);
     printdisplay(currPage);
   } else if (page == 4) {
     drawMenuNPC();
@@ -211,7 +261,7 @@ void printdisplay(int page) {
     drawMenuMaster();
   } else if (page == 99) {
   } else if (page == 50) {
-    checkRemainingTime();
+    checkRemainingKnockTime();
 
     cleardisplay(6);
     tft.setCursor(65, 50);
@@ -230,6 +280,27 @@ void printdisplay(int page) {
     tft.setTextColor(TFT_WARNING);
     tft.print("[OK] - після лікування");
     tft.setTextColor(TFT_TEXT);
+
+  } else if (page == 51) {
+    checkRemainingReviveTime();
+
+    cleardisplay(6);
+    tft.setCursor(50, 50);
+    tft.setTextColor(TFT_GOOD);
+    tft.setTextSize(3);
+    tft.print("Відновлення");
+    tft.setTextColor(TFT_TEXT);
+    tft.setCursor(30, 100);
+    tft.print("Залишилось:");
+    tft.setCursor(40, 140);
+    tft.print(secondsRemaining);
+    tft.setCursor(160, 140);
+    tft.print(" секунд");
+    tft.setTextColor(TFT_TEXT);
+
+  } else if (page == 52) {
+
+
 
   } else if (page == 10) {
     cleardisplay(0);
@@ -301,6 +372,7 @@ void printTime() {
 void printBattery() {
   cleardisplay(5);
   tft.setTextSize(1);
+  tft.setTextColor(TFT_TEXT);
   tft.setCursor(282, 5);
   tft.print("100%");
   tft.setTextSize(1);
@@ -402,17 +474,6 @@ void drawKnockButtons() {
   tft.setTextSize(1);
 }
 
-String WhatPercent(int pro) {
-  String output;
-  switch (pro) {
-    case 0: output = " (-0%)"; break;
-    case 1: output = " (-25%)"; break;
-    case 2: output = " (-50%)"; break;
-    case 3: output = " (-90%)"; break;
-  }
-
-  return output;
-}
 
 
 void CautionDisplay(String text, int min) {

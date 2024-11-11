@@ -34,12 +34,63 @@ void UpdateDisplay(int page, int clear) {
 }
 
 void doCard() {
-  if (card.type == 0) {
+  if (card.type == -1) {
 
-  } else if (card.type == 0) {
+  } else if (card.type == 0) {  // medicament
+
+
+    if (card.subtype == 1) {
+
+      if (card.value > 0) {
+        if ((data.health + (card.value * pow(10, card.multiplier))) > 100) {
+          data.health = 100;
+        } else {
+          data.health += card.value * pow(10, card.multiplier);
+        }
+      } else if (card.percent > 0) {
+        data.health = data.health + (data.health * card.percent / 100);
+      }
+      if (data.health > 100) {
+        data.health = 100;
+      }
+
+    } else if (card.subtype == 2) {
+      if (card.value > 0) {
+        if ((data.radiation - (card.value * pow(10, card.multiplier))) < 0) {
+          data.radiation = 0;
+        } else {
+          data.radiation -= card.value * pow(10, card.multiplier);
+        }
+      } else if (card.percent > 0) {
+        data.radiation = data.radiation - (data.radiation * card.percent / 100);
+      }
+      if (data.radiation < 0) {
+        data.radiation = 0;
+      }
+
+    } else if (card.subtype == 4) {
+      medical_protection = 1;
+    }
+
+
+
 
   } else if (card.type == 1) {
+  }
+ else if (card.type == 4) {
+  data.is_zombie = 1;
+  CheckHealthStatus = 1;
+  }
 
+
+
+
+  else if (card.type == 9) {
+    rescue();
+  } else if (card.type == 13) {
+    int time;
+    time = card.hours * 3600 + card.minutes * 60 + card.seconds;
+    StartReviving(time);
   }
 }
 
@@ -124,6 +175,7 @@ void CheckEvents(int var) {
       } else {
         serialLogln("Подія ID: " + String(id) + " (" + String(eventName) + ") відбулася і була видалена.");
         mp3.playTrack(7);
+        medical_protection = 0;
       }
     }
 
@@ -150,9 +202,7 @@ int genRandom(int minValue, int maxValue) {
 
 // Эта функция будет вызвана каждую минуту для каждого активного события
 void executeEventCode(int id, const char* eventName) {
-
-  serialLogln("Виконання події ID: " + String(id) + " (" + String(eventName) + ")");
-  if (!data.is_dead and !in_shelter) {
+  if (!data.is_dead and !in_shelter and !medical_protection) {
     data.health -= 51;
     causeOfDeath = eventName;
   }
@@ -189,10 +239,9 @@ void startTimer(int n) {
 
     targetSeconds = n;  // Устанавливаем нужное количество секунд
     timerStarted = true;
-
   }
 }
-void checkRemainingTime() {
+void checkRemainingKnockTime() {
   if (timerStarted) {
     unsigned long currentMillis = millis();
 
@@ -210,222 +259,169 @@ void checkRemainingTime() {
       int currentYear = now.year;
 
       // Расчет разницы во времени (в секундах)
-      int diffSeconds = (currentYear - startYear) * 31536000 + (currentMonth - startMonth) * 2592000 + 
-                        (currentDate - startDate) * 86400 + (currentHour - startHour) * 3600 + 
-                        (currentMin - startMin) * 60 + (currentSec - startSec);
+      int diffSeconds = (currentYear - startYear) * 31536000 + (currentMonth - startMonth) * 2592000 + (currentDate - startDate) * 86400 + (currentHour - startHour) * 3600 + (currentMin - startMin) * 60 + (currentSec - startSec);
 
       secondsRemaining = targetSeconds - diffSeconds;
-      
+
       // Если время истекло, запускаем функцию
       if (secondsRemaining <= 0) {
-        Serial.println("Таймер завершён. Запуск функции...");
+        SerialPrintTime();
+        serialLogln("Гравець помер через поранення");
         data.health = 0;
         data.is_dead = 1;
         data.is_knocked = 0;
         causeOfDeath = "Поранення";
         secondsRemaining = 0;
-        startMin = 0; 
+        startMin = 0;
         startHour = 0;
-        startDate = 0; 
-        startMonth = 0; 
+        startDate = 0;
+        startMonth = 0;
         startYear = 0;
         timerStarted = false;  // Останавливаем таймер
       } else {
       }
     }
-  }else{
-        secondsRemaining = 0;
-        startMin = 0; 
-        startHour = 0;
-        startDate = 0; 
-        startMonth = 0; 
-        startYear = 0;
+  } else {
+    secondsRemaining = 0;
+    startMin = 0;
+    startHour = 0;
+    startDate = 0;
+    startMonth = 0;
+    startYear = 0;
   }
 }
 
-  void dump_byte_array(byte * buffer, byte bufferSize) {
-    for (byte i = 0; i < bufferSize; i++) {
-      Serial2Web(String(buffer[i] < 0x10 ? " 0" : " "));
-      Serial2Web(String(buffer[i], HEX));
-    }
-    Serial2Webln("");
+void StartReviving(int time) {
+  if (data.is_dead) {
+    isReviving = 1;
+    currPage = 51;
+    cleardisplay(0);
+    printdisplay(51);
+    startTimer(time);
   }
+}
 
-  void CheckPlayersDeath() {
-    WhatsTheReason();
+void fixDisplay(){
 
-    if (data.health <= 0) {
-      data.health = 0;
-      data.is_dead = 1;
-      data.radiation = 0;
-      updateConfig();
-      currPage = 9;
-      printdisplay(currPage);
-      update = 1;
-    } else {
-      if (data.is_dead) {
-        update = 1;
-        data.is_dead = 0;
-        updateConfig();
-        update = 1;
-      }
-      if (currPage == 9) {
-        update = 1;
+    if (data.is_dead and !isReviving) currPage = 9;
+    else if (data.is_dead and isReviving) currPage = 51;
+    else if (data.is_knocked) currPage = 50;
+    else currPage = 0;
+
+
+}
+
+void checkRemainingReviveTime() {
+  if (timerStarted) {
+    unsigned long currentMillis = millis();
+
+    // Проверяем, прошло ли 5 секунд с момента последнего вывода
+    if (currentMillis - lastPrintTime >= printInterval) {
+      lastPrintTime = currentMillis;
+
+      // Получаем текущее время
+      DateTime now = rtc.getTime();
+      int currentSec = now.second;
+      int currentMin = now.minute;
+      int currentHour = now.hour;
+      int currentDate = now.day;
+      int currentMonth = now.month;
+      int currentYear = now.year;
+
+      // Расчет разницы во времени (в секундах)
+      int diffSeconds = (currentYear - startYear) * 31536000 + (currentMonth - startMonth) * 2592000 + (currentDate - startDate) * 86400 + (currentHour - startHour) * 3600 + (currentMin - startMin) * 60 + (currentSec - startSec);
+
+      secondsRemaining = targetSeconds - diffSeconds;
+
+      // Если время истекло, запускаем функцию
+      if (secondsRemaining <= 0) {
+        SerialPrintTime();
+        serialLogln("Гравець воскрес за допомогою RFID або Radio");
+        isReviving = 0;
+        rescue();
+        secondsRemaining = 0;
+        startMin = 0;
+        startHour = 0;
+        startDate = 0;
+        startMonth = 0;
+        startYear = 0;
+        timerStarted = false;  // Останавливаем таймер
+      } else {
       }
     }
+  } else {
+    secondsRemaining = 0;
+    startMin = 0;
+    startHour = 0;
+    startDate = 0;
+    startMonth = 0;
+    startYear = 0;
   }
-  // void PrintMainPage(bool change) {
-  //   if (change) currPage = 0;
+}
 
-  //   cleardisplay(0);
-  //   printdisplay(currPage);
-  // }
+void dump_byte_array(byte* buffer, byte bufferSize) {
+  for (byte i = 0; i < bufferSize; i++) {
+    Serial2Web(String(buffer[i] < 0x10 ? " 0" : " "));
+    Serial2Web(String(buffer[i], HEX));
+  }
+  Serial2Webln("");
+}
 
-  void rescue() {
+void CheckPlayersDeath() {
+  WhatsTheReason();
 
-    data.health = 100;
-    data.is_dead = 0;
-    data.is_knocked = 0;
+  if (data.health <= 0 and !isReviving) {
+    data.health = 0;
+    data.is_dead = 1;
     data.radiation = 0;
-    CheckPlayersDeath();
-    currPage = 0;
+    updateConfig();
+    currPage = 9;
+    printdisplay(currPage);
     update = 1;
-  }
-
-  void WhatsTheReason() {
-    if (data.radiation >= 1000) {
-      causeOfDeath = "Радіація";
+  } else {
+    if (data.is_dead and !isReviving) {
+      update = 1;
+      data.is_dead = 0;
+      updateConfig();
+      update = 1;
     }
-  }
-
-  void lock(int type) {
-    isAuthenticated = false;
-    SerialPrintTime();
-    if (type == 0) {
-      serialLogln("Сессію завершено. (UART)");
-    } else {
-      serialLogln("Сессію завершено. (WiFi)");
-    }
-  }
-
-
-
-  void Init() {
-    Serial.begin(115200);
-    pinMode(15, OUTPUT);
-    digitalWrite(15, 1);
-
-
-
-    if (!LittleFS.begin(false)) {
-      Serial.println("LittleFS initialisation failed!");
-      while (1) yield();
-    }
-    if (!LittleFS.exists("/profile.cfg")) {
-      writeDefaultConfig();
-    }
-    if (!LittleFS.exists("/events.cfg")) {
-      createEmptyEventsConfig();
-    }
-
-
-
-
-
-    readConfig();
-    delay(50);
-    loadLogIndex();
-    delay(50);
-    createNewLogFile();
-    delay(50);
-
-
-
-
-    mp3Serial.begin(MP3_SERIAL_SPEED, SWSERIAL_8N1, MP3_RX_PIN, MP3_TX_PIN, false, MP3_SERIAL_BUFFER_SIZE, 0);  //false=signal not inverted, 0=ISR/RX buffer size (shared with serial TX buffer)
-    mp3.begin(mp3Serial, MP3_SERIAL_TIMEOUT, DFPLAYER_MINI, false);                                             //"DFMINI" see NOTE, false=no response from module after the command
-    mp3.stop();                                                                                                 //if player was runing during ESP8266 reboot
-    mp3.reset();                                                                                                //reset all setting to default
-    mp3.setSource(2);                                                                                           //1=USB-Disk, 2=TF-Card, 3=Aux, 4=Sleep, 5=NOR Flash
-    mp3.setEQ(0);                                                                                               //0=Off, 1=Pop, 2=Rock, 3=Jazz, 4=Classic, 5=Bass
-    mp3.setVolume(30);                                                                                          //0..30, module persists volume on power failure
-    mp3.sleep();                                                                                                //inter sleep mode, 24mA
-    mp3.wakeup(2);                                                                                              //exit sleep mode & initialize source 1=USB-Disk, 2=TF-Card, 3=Aux, 5=NOR Flash
-    mp3Serial.enableRx(true);                                                                                   //enable interrupts on RX-pin for better response detection, less overhead than mp3Serial.listen()
-
-
-
-    SPI.begin();
-    mfrc522.PCD_Init();
-
-
-
-    if (mp3.getStatus()) serialLogln("[MP3] Сталась помилка ініціалізації.");
-    else serialLogln("[MP3] Ініціалізація ... Успішно!");
-
-    if (rtc.lostPower()) {
-      rtc.setTime(BUILD_SEC, BUILD_MIN, BUILD_HOUR, BUILD_DAY, BUILD_MONTH, BUILD_YEAR);
-    }
-
-    Serial.print(F("[Radio] Ініціалізація ... "));
-    int state = radio.begin(439.0, 125.0, 9, 7, RADIOLIB_SX127X_SYNC_WORD, 10, 8, 0);
-    if (state == RADIOLIB_ERR_NONE) {
-      Serial.println(F("Успішно!"));
-    } else {
-      Serial.print(F("Помилка!, код "));
-      Serial.println(state);
-    }
-    radio.setPacketReceivedAction(setFlag);
-    Serial.print(F("[Radio] Спробую просканувати ... "));
-    state = radio.startReceive();
-    if (state == RADIOLIB_ERR_NONE) {
-      Serial.println(F("Успішно!"));
-    } else {
-      Serial.print(F("Помилка!, код "));
-      Serial.println(state);
-    }
-
-
-
-
-    serialLogln("▶ Запуск системи (Build: " + VERS + ") ◀");
-    SerialPrintTime();
-    delay(50);
-
-    mfrc522.PCD_SetAntennaGain(mfrc522.RxGain_max);  // Установка усиления антенны
-    mfrc522.PCD_AntennaOff();                        // Перезагружаем антенну
-    mfrc522.PCD_AntennaOn();                         // Включаем антенну
-
-
-    for (byte i = 0; i < 6; i++) {
-      key.keyByte[i] = 0xFF;
-    }
-
-
-
-    tft.init();
-    tft.setRotation(3);
-    tft.fillScreen(TFT_BG);
-    TJpgDec.setSwapBytes(true);
-    TJpgDec.setCallback(tft_output);
-      if (data.is_knocked and currPage != 50 and currPage != 6) {
-    if (secondsRemaining == 0) {
-      data.health = 0;
-      data.is_dead = 1;
-      data.is_knocked = 0;
-      causeOfDeath = "Поранення";
-    } else {
-      currPage = 50;
+    if (currPage == 9) {
       update = 1;
     }
   }
+}
+// void PrintMainPage(bool change) {
+//   if (change) currPage = 0;
 
+//   cleardisplay(0);
+//   printdisplay(currPage);
+// }
 
-    if (data.is_dead and currPage != 9 and currPage != 6) {
-      data.health = 0;
-      data.is_dead = 1;
-      data.is_knocked = 0;
-      currPage = 9;
-      update = 1;
+void rescue() {
+  delay(100);
+  isReviving = 0;
+  data.is_zombie = 0;
+  data.health = 100;
+  data.is_dead = 0;
+  data.is_knocked = 0;
+  data.radiation = 0;
+  CheckPlayersDeath();
+  currPage = 0;
+  update = 1;
+}
+
+void WhatsTheReason() {
+  if (data.radiation >= 1000) {
+    causeOfDeath = "Радіація";
   }
+}
+
+void lock(int type) {
+  isAuthenticated = false;
+  SerialPrintTime();
+  if (type == 0) {
+    serialLogln("Сессію завершено. (UART)");
+  } else {
+    serialLogln("Сессію завершено. (WiFi)");
   }
+}

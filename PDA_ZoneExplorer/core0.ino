@@ -88,7 +88,7 @@ void setupWebServer() {
       response->addHeader("Connection", "close");
       request->send(response);
       if (shouldReboot) {
-        Serial.println("Перезапуск...");
+        Serial2Webln("Перезапуск...");
         delay(500);
         ESP.restart();
       }
@@ -187,10 +187,10 @@ void core0(void *p) {
 
       if (state == RADIOLIB_ERR_NONE) {
         serialLog("[Radio] Дані:\t");
-        serialLogln(str);
+        serialLog(str);
 
         // print RSSI (Received Signal Strength Indicator)
-        serialLog("[Radio] RSSI:\t");
+        serialLog("  ");
         serialLog(String(radio.getRSSI()));
         serialLogln(" dBm");
         parseRadioPacket(str, radio.getRSSI());
@@ -217,7 +217,7 @@ void core0(void *p) {
 
 
 
-    vTaskDelay(5);
+    vTaskDelay(10);
   }
 }
 

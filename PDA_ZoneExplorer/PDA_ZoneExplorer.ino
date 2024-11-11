@@ -56,13 +56,15 @@ bool selectedknockButton = 1;
 uint64_t updatetime;
 uint64_t checktimetimer;
 uint64_t cardreturntimer;
+uint64_t globaltimetick;
 uint64_t globalcheckplayerstats;
 uint64_t globaldoeffects;
 unsigned long lastShelterTestTime = 0;
 unsigned long lastRadiationTime = 0;
 unsigned long lastMineExplodeTime = 0;
 uint64_t radiationcheck;
-
+uint64_t revivecheck;
+uint64_t knockcheck;
 
 const int DELAY_BETWEEN_CARDS = 1000;
 long timeLastCardRead = 0;
@@ -86,20 +88,26 @@ int startSec, startMin, startHour, startDate, startMonth, startYear;
 bool globalUpdate;
 
 bool in_shelter = 0;
+bool medical_protection = 0;
 
+bool isReviving;
 bool isAnomaly;
 bool isRadiation;
 bool isArtefact;
 bool isVykyd;
 bool isWarning;
 bool isAlarm;
-bool isAuthenticated = false;
+bool isAuthenticated = true;
+bool GlobalGoRevive;
+int GlobalReviveTime;
+bool CheckHealthStatus;
+
 
 uint64_t currentsievert;
 float prev_health = -1;
-int prev_armor = -1;
+float prev_armor = -1;
 int prev_radiation = -1;
-int prev_min;
+int prev_min = -1;
 int prev_page = -1;
 
 uint8_t card_data[16];
@@ -111,9 +119,9 @@ struct Data {
   char pass[20] = "12345678";
   char adminpass[20] = "1122";
   float health = 100;
-  int armor = 0;
+  float armor = 0;
   uint32_t radiation = 0;
-  int group = 0;
+  int group = 1;
 
 
   int fire_protection = 0;
@@ -151,8 +159,11 @@ struct DecodedCard {
 DecodedCard card;
 
 struct Settings {
+  bool GroupIDRadiationIgnore = 0;
   byte gameCode = 88;
-  int knocked_time = 180; 
+  int knocked_time = 180;
+  int revive_time = 180;
+  bool DoRadiationAffectOnArmor = 1;
 };
 Settings s;
 
@@ -203,8 +214,8 @@ bool update = 1;
 
 
 
-unsigned long lastScanTime = 0;
-const unsigned long scanInterval = 1000;  // Интервал сканирования 5 секунд
+//unsigned long lastScanTime = 0;
+//const unsigned long scanInterval = 1000;  // Интервал сканирования 5 секунд
 
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);
@@ -225,37 +236,55 @@ void setup() {
 
 void loop() {
 
-
-
-
-
   ok.tick();
   up.tick();
   down.tick();
   left.tick();
   right.tick();
 
-DateTime now = rtc.getTime();
-
- 
-DisplayInteractiveNow(currPage);
-
-
+  DisplayInteractiveNow(currPage);
+  DateTime now = rtc.getTime();
 
   if (currPage == 0 and down.click()) {
-
     currPage = 10;
     update = 1;
   }
 
-
-  if (currPage == 50) {
-    if(ok.click()){timerStarted = 0; data.is_knocked = 0; currPage = 0; update = 1;}
-    if (millis() - globalcheckplayerstats > 1000) {
-      printdisplay(50);
-    }
+  if (GlobalGoRevive) {
+    StartReviving(GlobalReviveTime);
+    GlobalGoRevive = 0;
   }
 
+  if (CheckHealthStatus and currPage == 0) {
+    cleardisplay(8);
+    tft.setTextSize(2);
+    tft.setTextColor(TFT_TEXT);
+    tft.setCursor(12, 180);
+    tft.print("Стан здоров'я: ");
+    tft.setCursor(12, 205);
+    String health;
+
+    if (data.is_zombie) {
+      tft.setTextColor(TFT_ALARM);
+      health = "зомбований.";
+    } else if (data.radiation >= 1000 and data.radiation < 100000 ) {
+      tft.setTextColor(TFT_WARNING);
+      health = "легке опромінення.";
+    } else if (data.radiation >= 100000 and data.radiation < 200000) {
+      tft.setTextColor(TFT_ALARM);
+      health = "сильне опромінення.";
+    } else if (data.radiation >= 200000) {
+      tft.setTextColor(TFT_ALARM);
+      health = "тяжке опромінення.";
+    } else {
+      tft.setTextColor(TFT_GOOD);
+      health = "норма.";
+    }
+    tft.print(health);
+    tft.setTextColor(TFT_TEXT);
+
+    CheckHealthStatus = 0;
+  }
 
   if (millis() - globalcheckplayerstats > 1000) {
     globalcheckplayerstats = millis();
@@ -264,7 +293,7 @@ DisplayInteractiveNow(currPage);
       globalUpdate = 1;
       CheckPlayersDeath();
     } else {
-      if (globalUpdate) {
+      if (globalUpdate and !isReviving) {
         currPage = 9;
         update = 1;
         globalUpdate = 0;
@@ -274,11 +303,21 @@ DisplayInteractiveNow(currPage);
 
   if (in_shelter && (millis() - lastShelterTestTime > 20000)) {
     in_shelter = false;
-    Serial.println("Не было сигнала от укрытия в течение 20 секунд. Статус: не в укрытии.");
+    serialLogln("Не було сигналу від укриття протягом 20 секунд. Статус: не в укритті.");
   }
 
   if (currentsievert > 0 && (millis() - lastRadiationTime > 5000)) {
     currentsievert = 0;
+    if (currPage == 0) {
+      tft.setTextSize(2);
+      cleardisplay(7);
+      tft.setCursor(12, 154);
+      tft.print("Рад.фон: ");
+      tft.setTextColor(TFT_GOOD);
+      tft.print("Норма.");
+      tft.setTextColor(TFT_TEXT);
+      tft.setTextSize(1);
+    }
   }
 
 
@@ -311,6 +350,8 @@ DisplayInteractiveNow(currPage);
     drawProgressBar(58, 84, 228, 16, data.armor, TFT_TEXT, TFT_ARMOR);
     prev_armor = data.armor;
   }
+
+
   if (data.radiation != prev_radiation and currPage == 0) {
     cleardisplay(4);
     tft.setTextSize(2);
@@ -319,7 +360,22 @@ DisplayInteractiveNow(currPage);
     else tft.print(">250000");
     tft.print(" мЗв");
     prev_radiation = data.radiation;
+    cleardisplay(7);
+    tft.setCursor(12, 154);
+    tft.print("Рад.фон: ");
+    if (currentsievert < 100) {
+      tft.setTextColor(TFT_GOOD);
+      tft.print("Норма.");
+    } else if (currentsievert >= 100 and currentsievert < 10000) {
+      tft.setTextColor(TFT_WARNING);
+      tft.print("Увага!");
+    } else if (currentsievert >= 10000) {
+      tft.setTextColor(TFT_ALARM);
+      tft.print("Тревога!");
+    }
+    tft.setTextColor(TFT_TEXT);
     tft.setTextSize(1);
+    CheckHealthStatus = 1;
   }
 
 
@@ -335,6 +391,7 @@ DisplayInteractiveNow(currPage);
 
 
   if (now.minute != prev_min and now.minute != 165) {
+
     CheckEvents(0);
     cleardisplay(1);
     printTime();
@@ -342,117 +399,14 @@ DisplayInteractiveNow(currPage);
     updateConfig();
   }
 
-if(ok.hold() and data.is_npc and currPage == 0){
-  currPage = 4;
-  update = 1;
-}
-
-
-  if (currPage < 4) {
-    if (left.click()) {
-      currPage--;
-      if (currPage < 0) currPage = 3;
-      update = 1;
-    }
-    if (right.click()) {
-      currPage++;
-      if (currPage > 3) currPage = 0;
-      update = 1;
-    }
+  if (ok.hold() and data.is_npc and currPage == 0) {
+    currPage = 4;
+    update = 1;
   }
-
-  if (currPage == 6) {
-
-    if (left.click() or right.click()) {
-      selectedButton = !selectedButton;
-      printdisplay(6);
-    }
-
-    if (ok.click()) {
-      response = selectedButton;
-      if (response) {
-        applyCard(card.usage_method);
-      }
-      selectedButton = 1;
-      if (data.is_dead)currPage = 9;
-      else if (data.is_knocked)currPage = 50;
-      else currPage = 0;
-      cleardisplay(0);
-      update = 1;
-      printTime();
-    }
-  }
-
-
-  if (currPage == 10) {
-
-    if (left.click() or right.click()) {
-      selectedknockButton = !selectedknockButton;
-      printdisplay(10);
-    }
-
-    if (ok.click()) {
-      response = selectedknockButton;
-      if (response) {
-        ok.tick();
-        data.is_knocked = 1;
-        currPage = 50;
-        cleardisplay(0);
-        printdisplay(50);
-        startTimer(s.knocked_time);
-      } else {
-        currPage = (data.is_dead) ? 9 : 0;
-      }
-      selectedknockButton = 1;
-      update = 1;
-      printTime();
-    }
-  }
-
-
-  if (currPage == 4) {
-    if (up.click()) {
-      NPCselectedItem = (NPCselectedItem - 1 + NPCmenuItemsCount) % NPCmenuItemsCount;
-      drawMenuNPC();
-    }
-
-    if (down.click()) {
-      NPCselectedItem = (NPCselectedItem + 1) % NPCmenuItemsCount;
-      drawMenuNPC();
-    }
-
-    if (ok.click()) {
-      switch (NPCselectedItem) {
-        case 0:
-          if (ChangeUsage(card.uid, 1, 1)) {
-            tft.setTextSize(2);
-            tft.setTextColor(TFT_GOOD);
-            tft.setCursor(30, 200);
-            tft.print("Успішно");
-            delay(500);
-            drawMenuNPC();
-          } else {
-            tft.setTextSize(2);
-            tft.setTextColor(TFT_RED);
-            tft.setCursor(30, 200);
-            tft.print("Помилка");
-            delay(500);
-            drawMenuNPC();
-          }
-          break;
-        case 1: rescue(); break;
-        case 4: currPage = 0; update = 1; break;
-      }
-    }
-  }
-
-
 
 
   if (millis() - radiationcheck > 1000 and currPage == 2) {
     radiationcheck = millis();
-
-
     update = 1;
   }
 
@@ -462,5 +416,4 @@ if(ok.hold() and data.is_npc and currPage == 0){
     printdisplay(currPage);
     update = 0;
   }
-
 }
