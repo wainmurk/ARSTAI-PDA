@@ -32,4 +32,4 @@
 - [Arstai:PDA](https://github.com/wainmurk/ARSTAI-PDA)
 - [Arstai:Anomaly](https://github.com/wainmurk/ARSTAI-Anomaly)
 - [Arstai:Uploader](https://github.com/wainmurk/ARSTAI-Uploader)
-- [Arstai:Artifact]((https://github.com/wainmurk/ARSTAL-Artifact)
+- [Arstai:Artifact](https://github.com/wainmurk/ARSTAL-Artifact)
