@@ -27,3 +27,9 @@
 
 
 > **Примітка**: для повного тестування екосистеми знадобляться програматор RFID-карток і радіо-точка (збираються окремо).
+
+## Екосистема Arstai:
+- [Arstai:PDA](https://github.com/wainmurk/ARSTAI-PDA)
+- [Arstai:Anomaly](https://github.com/wainmurk/ARSTAI-Anomaly)
+- [Arstai:Uploader](https://github.com/wainmurk/ARSTAI-Uploader)
+- [Arstai:Artifact](https://github.com/wainmurk/ARSTAL-Artifact)
