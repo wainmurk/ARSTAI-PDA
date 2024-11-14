@@ -76,10 +76,9 @@ void doCard() {
 
 
   } else if (card.type == 1) {
-  }
- else if (card.type == 4) {
-  data.is_zombie = 1;
-  CheckHealthStatus = 1;
+  } else if (card.type == 4) {
+    data.is_zombie = 1;
+    CheckHealthStatus = 1;
   }
 
 
@@ -301,14 +300,12 @@ void StartReviving(int time) {
   }
 }
 
-void fixDisplay(){
+void fixDisplay() {
 
-    if (data.is_dead and !isReviving) currPage = 9;
-    else if (data.is_dead and isReviving) currPage = 51;
-    else if (data.is_knocked) currPage = 50;
-    else currPage = 0;
-
-
+  if (data.is_dead and !isReviving) currPage = 9;
+  else if (data.is_dead and isReviving) currPage = 51;
+  else if (data.is_knocked) currPage = 50;
+  else currPage = 0;
 }
 
 void checkRemainingReviveTime() {
@@ -369,24 +366,29 @@ void dump_byte_array(byte* buffer, byte bufferSize) {
 
 void CheckPlayersDeath() {
   WhatsTheReason();
-
-  if (data.health <= 0 and !isReviving) {
-    data.health = 0;
-    data.is_dead = 1;
-    data.radiation = 0;
-    updateConfig();
-    currPage = 9;
-    printdisplay(currPage);
-    update = 1;
-  } else {
-    if (data.is_dead and !isReviving) {
-      update = 1;
-      data.is_dead = 0;
-      updateConfig();
-      update = 1;
-    }
-    if (currPage == 9) {
-      update = 1;
+  if (!s.immortalNPC) {
+    if (data.health <= 0 and !isReviving) {
+      if (!s.immortalNPC1hp) {
+        data.health = 0;
+        data.is_dead = 1;
+        data.radiation = 0;
+        updateConfig();
+        currPage = 9;
+        printdisplay(currPage);
+        update = 1;
+      }else{
+        data.health = 1;
+      }
+    } else {
+      if (data.is_dead and !isReviving) {
+        update = 1;
+        data.is_dead = 0;
+        updateConfig();
+        update = 1;
+      }
+      if (currPage == 9) {
+        update = 1;
+      }
     }
   }
 }

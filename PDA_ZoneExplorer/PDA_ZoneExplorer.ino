@@ -164,6 +164,10 @@ struct Settings {
   int knocked_time = 180;
   int revive_time = 180;
   bool DoRadiationAffectOnArmor = 1;
+  bool immortalNPC = 0; // доделать
+  bool immortalNPC1hp = 0;
+
+
 };
 Settings s;
 
