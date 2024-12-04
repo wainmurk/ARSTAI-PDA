@@ -3,6 +3,7 @@
 
 #include "flags.h"
 #include "io.h"
+#include "self.h"
 
 #ifndef __AVR__
 #include <functional>
@@ -288,28 +289,19 @@ class VirtButton {
     // было действие с кнопки, вернёт код события [событие]
     uint16_t action() {
         switch (bf.mask(0b111111111)) {
-            case (EB_PRS | EB_PRS_R):
-                return EB_PRESS;
-            case (EB_PRS | EB_HLD | EB_HLD_R):
-                return EB_HOLD;
-            case (EB_PRS | EB_HLD | EB_STP | EB_STP_R):
-                return EB_STEP;
+            case (EB_PRS | EB_PRS_R): return EB_PRESS;
+            case (EB_PRS | EB_HLD | EB_HLD_R): return EB_HOLD;
+            case (EB_PRS | EB_HLD | EB_STP | EB_STP_R): return EB_STEP;
             case (EB_REL | EB_REL_R):
             case (EB_REL | EB_REL_R | EB_HLD):
             case (EB_REL | EB_REL_R | EB_HLD | EB_STP):
                 return EB_RELEASE;
-            case (EB_REL_R):
-                return EB_CLICK;
-            case (EB_CLKS_R):
-                return EB_CLICKS;
-            case (EB_REL_R | EB_HLD):
-                return EB_REL_HOLD;
-            case (EB_CLKS_R | EB_HLD):
-                return EB_REL_HOLD_C;
-            case (EB_REL_R | EB_HLD | EB_STP):
-                return EB_REL_STEP;
-            case (EB_CLKS_R | EB_HLD | EB_STP):
-                return EB_REL_STEP_C;
+            case (EB_REL_R): return EB_CLICK;
+            case (EB_CLKS_R): return EB_CLICKS;
+            case (EB_REL_R | EB_HLD): return EB_REL_HOLD;
+            case (EB_CLKS_R | EB_HLD): return EB_REL_HOLD_C;
+            case (EB_REL_R | EB_HLD | EB_STP): return EB_REL_STEP;
+            case (EB_CLKS_R | EB_HLD | EB_STP): return EB_REL_STEP_C;
         }
         return 0;
     }
@@ -395,15 +387,26 @@ class VirtButton {
     bool tick(bool s) {
         clear();
         s = pollBtn(s);
-#ifndef EB_NO_CALLBACK
-        if (cb && s) cb();
-#endif
+        if (s) call();
         return s;
     }
 
     // обработка кнопки без сброса событий и вызова коллбэка
     bool tickRaw(const bool s) {
         return pollBtn(s);
+    }
+
+    // вызвать обработчик
+    void call(bool force = false) { // todo force заменить на флаг
+        if (force || action()) {
+#ifndef EB_NO_CALLBACK
+            if (cb) {
+                EB_self = this;
+                cb();
+                EB_self = nullptr;
+            }
+#endif
+        }
     }
 
     uint8_t clicks;
