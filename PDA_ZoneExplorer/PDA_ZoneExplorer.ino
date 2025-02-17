@@ -19,8 +19,8 @@ bool WEB = 1;
 
 const String VERS = "dev 0.3.0";
 
-#define DebugWiFiSSID "Lebben"
-#define DebugWiFiPassword "viktor26"
+#define DebugWiFiSSID "********"
+#define DebugWiFiPassword "********"
 
 
 #define SS_PIN 14
